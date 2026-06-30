@@ -97,6 +97,17 @@ sbatch slurm/finetune.sbatch
 - Anaconda + cuda/cudnn module versions on Gilbreth (`module spider`).
 - TissueNet license text + µm/px.
 
+## Limitations (honest scope)
+
+- **Evaluation subset:** N=300 test images (of ~1324) for a fast, fair head-to-head — same images
+  across all models. Easy to scale to the full split (drop `--limit`); the headline ranking is stable.
+- **One fine-tuned model, small sweep:** Cellpose-SAM on a 200-image subset, LR {1e-5, 5e-5}, 20
+  epochs — a recipe + measured lift, not an exhaustive hyperparameter search.
+- **AJI compute cost:** the vendored HoVer-Net AJI is O(cells × image) per pair; dense tissue
+  (100s of cells/image) makes scoring the slow step, not inference.
+- **μSAM input:** whole-cell μSAM uses a channel-mean grayscale; a learned 2-channel fusion could help.
+- **Not chasing SOTA:** the deliverable is the rigorous, reproducible comparison + failure analysis.
+
 ## License notes
 
 - Cellpose `cpsam` weights are **CC-BY-NC** — research/portfolio use only, not commercial.
