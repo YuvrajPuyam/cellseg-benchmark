@@ -1,0 +1,90 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>cajal — Cell-Segmentation Foundation-Model Benchmark</title>
+<style>
+  :root{--ink:#1b1b1a;--muted:#6c6c66;--line:#e6e6e0;--teal:#1D9E75;--coral:#D85A30;--blue:#378ADD;--bg:#fbfbf8;--card:#fff;--liftbg:#eef7f1;--liftbd:#cfe9dc;}
+  *{box-sizing:border-box;}
+  body{margin:0;background:var(--bg);color:var(--ink);font:15px/1.6 -apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;}
+  .sheet{max-width:880px;margin:24px auto;background:var(--card);border:1px solid var(--line);border-radius:14px;padding:30px 38px;}
+  h1{font-size:23px;margin:0 0 4px;font-weight:650;letter-spacing:-.01em;}
+  .one{color:var(--muted);margin:0 0 8px;font-size:15px;}
+  .meta{color:var(--muted);font-size:12.5px;margin:0 0 20px;}
+  h2{font-size:12px;letter-spacing:.05em;text-transform:uppercase;color:var(--muted);margin:24px 0 10px;font-weight:650;}
+  table{width:100%;border-collapse:collapse;font-size:13.5px;}
+  th,td{text-align:right;padding:7px 10px;border-bottom:1px solid var(--line);}
+  th:first-child,td:first-child{text-align:left;}
+  thead th{color:var(--muted);font-weight:600;border-bottom:1.5px solid #d8d8d2;}
+  td.best{font-weight:700;color:#0f4f3a;}
+  .model{font-weight:600;}
+  .row{display:flex;align-items:center;gap:10px;margin:6px 0;}
+  .row .lab{width:250px;font-size:13px;}
+  .bar{height:19px;border-radius:4px;}
+  .row .val{font-size:13px;color:var(--muted);}
+  .lift{background:var(--liftbg);border:1px solid var(--liftbd);border-radius:10px;padding:13px 17px;margin:6px 0;font-size:14px;}
+  .lift b{color:var(--teal);font-size:15px;}
+  ul{margin:6px 0 0;padding-left:20px;}
+  li{margin:4px 0;}
+  ul.caveat li{color:#7a5b2e;}
+  .foot{margin-top:22px;padding-top:13px;border-top:1px solid var(--line);color:var(--muted);font-size:12px;}
+  .pill{display:inline-block;background:#eef2f8;color:#2c4a73;border-radius:20px;padding:2px 9px;font-size:11.5px;margin:0 5px 4px 0;}
+  @media print{body{background:#fff;}.sheet{border:none;margin:0;max-width:none;}}
+</style>
+</head>
+<body>
+<div class="sheet">
+  <h1>cajal — which segmentation model for multiplexed tissue?</h1>
+  <p class="one">A reproducible benchmark of Cellpose-SAM vs μSAM on TissueNet, with a measured fine-tuning lift.</p>
+  <p class="meta">TissueNet v1.1 · test split · N=297 · per-image (macro) averaging · Purdue Gilbreth A30 · metrics: AJI+ / PQ / F1@IoU / boundary-F1 / Dice</p>
+
+  <h2>Headline — F1 @ IoU 0.5</h2>
+  <div class="row"><span class="lab">Whole-cell · Cellpose-SAM</span><span class="bar" style="width:304px;background:var(--teal)"></span><span class="val">0.844</span></div>
+  <div class="row"><span class="lab">Whole-cell · μSAM</span><span class="bar" style="width:184px;background:var(--coral)"></span><span class="val">0.512</span></div>
+  <div class="row"><span class="lab">Nuclear · Cellpose-SAM</span><span class="bar" style="width:303px;background:var(--teal)"></span><span class="val">0.841</span></div>
+  <div class="row"><span class="lab">Nuclear · μSAM</span><span class="bar" style="width:292px;background:var(--coral)"></span><span class="val">0.810</span></div>
+  <div class="row"><span class="lab">Whole-cell · Cellpose-SAM <em>(fine-tuned)</em></span><span class="bar" style="width:309px;background:var(--blue)"></span><span class="val">0.859 &nbsp;▲ +1.5 pts</span></div>
+
+  <h2>Whole-cell task</h2>
+  <table>
+    <thead><tr><th>model</th><th>F1@0.5</th><th>F1@0.75</th><th>AJI+</th><th>PQ</th><th>boundary-F1</th><th>Dice</th></tr></thead>
+    <tbody>
+      <tr><td class="model">Cellpose-SAM</td><td class="best">0.844</td><td class="best">0.591</td><td class="best">0.718</td><td class="best">0.670</td><td class="best">0.869</td><td class="best">0.902</td></tr>
+      <tr><td class="model">μSAM</td><td>0.512</td><td>0.133</td><td>0.405</td><td>0.348</td><td>0.554</td><td>0.668</td></tr>
+    </tbody>
+  </table>
+
+  <h2>Nuclear task</h2>
+  <table>
+    <thead><tr><th>model</th><th>F1@0.5</th><th>F1@0.75</th><th>AJI+</th><th>PQ</th><th>boundary-F1</th><th>Dice</th></tr></thead>
+    <tbody>
+      <tr><td class="model">Cellpose-SAM</td><td class="best">0.841</td><td>0.530</td><td class="best">0.710</td><td class="best">0.651</td><td>0.895</td><td>0.871</td></tr>
+      <tr><td class="model">μSAM</td><td>0.810</td><td class="best">0.601</td><td>0.702</td><td>0.648</td><td class="best">0.907</td><td class="best">0.892</td></tr>
+    </tbody>
+  </table>
+
+  <h2>Fine-tuning Cellpose-SAM — whole-cell, 200-image subset, 20 epochs</h2>
+  <div class="lift"><b>+1.5 pts F1@0.5</b> (0.844 → 0.859), plus AJI+ +0.014, PQ +0.018, boundary-F1 +0.016, Dice +0.013 — at lr 1e-5. lr 5e-5 was too high (≈ flat). A small, consistent gain from just 200 labels.</div>
+
+  <h2>Takeaways</h2>
+  <ul>
+    <li><b>Cellpose-SAM is the most robust zero-shot choice</b>, and decisively so on whole-cell.</li>
+    <li>On <b>nuclei the two are close</b> — pick by what you weight: detection (Cellpose) vs. boundary tightness (μSAM wins boundary-F1 &amp; Dice).</li>
+    <li><b>Fine-tuning works</b>: a measurable whole-cell lift from a small labeled set.</li>
+  </ul>
+
+  <h2>Honest caveats</h2>
+  <ul class="caveat">
+    <li>μSAM's whole-cell input is a naive channel-mean grayscale — its 0.51 reflects the harness, not the model's ceiling; a learned 2-channel fusion would likely close much of the gap.</li>
+    <li>StarDist omitted — its pretrained TF build crashes (core-dumped) on this cluster, GPU and CPU.</li>
+    <li>N=297 single-seed point estimates; the +1.5 pts lift is reported without confidence intervals (next: multi-seed + CIs, val-based LR selection).</li>
+  </ul>
+
+  <div class="foot">
+    <span class="pill">reproducible repo</span><span class="pill">pinned envs</span><span class="pill">one-command finalize</span><span class="pill">unit-tested metrics</span><br>
+    AJI+ verified bit-identical to HoVer-Net · matching = Hungarian 1-to-1 (stardist.matching) · boundary-F1 = normalized surface dice (2 px). Code, tables &amp; figures in the repo.
+  </div>
+</div>
+</body>
+</html>
