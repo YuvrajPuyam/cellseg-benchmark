@@ -38,7 +38,16 @@ Two tasks, because StarDist's star-convex prior collapses to near-circles on who
 > Metrics: AJI+ (Hungarian 1-to-1), PQ, F1@IoU, boundary-F1 (NSD, 2 px), Dice.
 
 <!--RESULTS-->
-_Populated from the committed benchmark run — see `results/benchmark_tables.md`._
+**Nuclear task** (all metrics: higher is better)
+
+| model | F1@0.5 | F1@0.75 | AJI+ | PQ | boundary-F1 | Dice | n |
+|---|---|---|---|---|---|---|---|
+| Cellpose-SAM | **0.841** | 0.530 | **0.710** | **0.651** | 0.895 | 0.871 | 297 |
+| μSAM | 0.810 | **0.601** | 0.702 | 0.648 | **0.907** | **0.892** | 297 |
+| StarDist (2D_versatile_fluo) | _see results/benchmark_tables.md_ | | | | | | |
+
+Cellpose-SAM leads on F1@0.5 / AJI+ / PQ; μSAM edges ahead on the stricter F1@0.75 and on
+boundary-F1 (tighter contours). Whole-cell table + StarDist row: `results/benchmark_tables.md`.
 <!--/RESULTS-->
 
 **Fine-tuning study (whole-cell):** Cellpose-SAM fine-tuned on a 200-image TissueNet subset,
