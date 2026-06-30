@@ -38,27 +38,29 @@ Two tasks, because StarDist's star-convex prior collapses to near-circles on who
 > Metrics: AJI+ (Hungarian 1-to-1), PQ, F1@IoU, boundary-F1 (NSD, 2 px), Dice.
 
 <!--RESULTS-->
-(higher is better; **bold** = best in column)
+(higher is better; **bold** = best in column; `±` = bootstrap 95% CI half-width)
 
-**Whole-cell task**
-
-| model | F1@0.5 | F1@0.75 | AJI+ | PQ | boundary-F1 | Dice |
-|---|---|---|---|---|---|---|
-| Cellpose-SAM | **0.844** | **0.591** | **0.718** | **0.670** | **0.869** | **0.902** |
-| μSAM | 0.512 | 0.133 | 0.405 | 0.348 | 0.554 | 0.668 |
-
-**Nuclear task**
+**Whole-cell task** (N=297)
 
 | model | F1@0.5 | F1@0.75 | AJI+ | PQ | boundary-F1 | Dice |
 |---|---|---|---|---|---|---|
-| Cellpose-SAM | **0.841** | 0.530 | **0.710** | **0.651** | 0.895 | 0.871 |
-| μSAM | 0.810 | **0.601** | 0.702 | 0.648 | **0.907** | **0.892** |
+| Cellpose-SAM | **0.844 ±.013** | **0.591 ±.024** | **0.718 ±.012** | **0.670 ±.014** | **0.869 ±.014** | **0.902 ±.010** |
+| μSAM | 0.736 ±.018 | 0.412 ±.020 | 0.597 ±.015 | 0.553 ±.015 | 0.740 ±.020 | 0.808 ±.015 |
 
-**Read:** Cellpose-SAM is the most robust across both tasks. On **nuclei** the two are close
-(μSAM even wins the stricter F1@0.75 and boundary-F1 — tighter contours). On **whole-cell**
-Cellpose-SAM wins decisively; μSAM collapses (0.51 F1) under the naive channel-mean grayscale
-input — a fusion limitation, not a verdict on the model. StarDist's pretrained TF build
-segfaults on this driver (GPU) and CPU inference is unstable here, so it's omitted (see Limitations).
+**Nuclear task** (N=297; StarDist N=148)
+
+| model | F1@0.5 | F1@0.75 | AJI+ | PQ | boundary-F1 | Dice |
+|---|---|---|---|---|---|---|
+| Cellpose-SAM | **0.841 ±.017** | 0.530 ±.026 | **0.710 ±.014** | **0.651 ±.015** | 0.895 ±.014 | 0.871 ±.011 |
+| μSAM | 0.810 ±.015 | **0.601 ±.019** | 0.702 ±.012 | 0.648 ±.013 | **0.907 ±.008** | **0.892 ±.006** |
+| StarDist (2D_versatile_fluo) | 0.766 ±.023 | 0.464 ±.025 | 0.633 ±.017 | 0.585 ±.020 | 0.848 ±.014 | 0.844 ±.012 |
+
+**Read:** Cellpose-SAM is the most robust across both tasks, and its whole-cell lead over μSAM
+(0.844 vs 0.736) far exceeds the CIs — a real, significant gap. On **nuclei** the three are
+closer: μSAM even wins the stricter F1@0.75 and boundary-F1 (tighter contours), and StarDist —
+a much smaller, nuclei-specialist model — is a respectable 0.766. The earlier μSAM whole-cell
+"collapse" (0.51) was a **harness artifact** of a channel-mean grayscale input; the corrected
+RGB=[membrane, nuclear, membrane] input recovers it to 0.736, so μSAM is competitive, not broken.
 
 **Fine-tuning Cellpose-SAM (whole-cell, 200-image subset, 20 epochs):**
 

@@ -37,11 +37,11 @@
 <div class="sheet">
   <h1>cajal — which segmentation model for multiplexed tissue?</h1>
   <p class="one">A reproducible benchmark of Cellpose-SAM vs μSAM on TissueNet, with a measured fine-tuning lift.</p>
-  <p class="meta">TissueNet v1.1 · test split · N=297 · per-image (macro) averaging · Purdue Gilbreth A30 · metrics: AJI+ / PQ / F1@IoU / boundary-F1 / Dice</p>
+  <p class="meta">TissueNet v1.1 · test split · N=297 (StarDist N=148) · per-image (macro) averaging · bootstrap 95% CIs · Purdue Gilbreth A30 · metrics: AJI+ / PQ / F1@IoU / boundary-F1 / Dice</p>
 
   <h2>Headline — F1 @ IoU 0.5</h2>
   <div class="row"><span class="lab">Whole-cell · Cellpose-SAM</span><span class="bar" style="width:304px;background:var(--teal)"></span><span class="val">0.844</span></div>
-  <div class="row"><span class="lab">Whole-cell · μSAM</span><span class="bar" style="width:184px;background:var(--coral)"></span><span class="val">0.512</span></div>
+  <div class="row"><span class="lab">Whole-cell · μSAM</span><span class="bar" style="width:265px;background:var(--coral)"></span><span class="val">0.736</span></div>
   <div class="row"><span class="lab">Nuclear · Cellpose-SAM</span><span class="bar" style="width:303px;background:var(--teal)"></span><span class="val">0.841</span></div>
   <div class="row"><span class="lab">Nuclear · μSAM</span><span class="bar" style="width:292px;background:var(--coral)"></span><span class="val">0.810</span></div>
   <div class="row"><span class="lab">Whole-cell · Cellpose-SAM <em>(fine-tuned)</em></span><span class="bar" style="width:309px;background:var(--blue)"></span><span class="val">0.859 &nbsp;▲ +1.5 pts</span></div>
@@ -51,7 +51,7 @@
     <thead><tr><th>model</th><th>F1@0.5</th><th>F1@0.75</th><th>AJI+</th><th>PQ</th><th>boundary-F1</th><th>Dice</th></tr></thead>
     <tbody>
       <tr><td class="model">Cellpose-SAM</td><td class="best">0.844</td><td class="best">0.591</td><td class="best">0.718</td><td class="best">0.670</td><td class="best">0.869</td><td class="best">0.902</td></tr>
-      <tr><td class="model">μSAM</td><td>0.512</td><td>0.133</td><td>0.405</td><td>0.348</td><td>0.554</td><td>0.668</td></tr>
+      <tr><td class="model">μSAM</td><td>0.736</td><td>0.412</td><td>0.597</td><td>0.553</td><td>0.740</td><td>0.808</td></tr>
     </tbody>
   </table>
 
@@ -61,6 +61,7 @@
     <tbody>
       <tr><td class="model">Cellpose-SAM</td><td class="best">0.841</td><td>0.530</td><td class="best">0.710</td><td class="best">0.651</td><td>0.895</td><td>0.871</td></tr>
       <tr><td class="model">μSAM</td><td>0.810</td><td class="best">0.601</td><td>0.702</td><td>0.648</td><td class="best">0.907</td><td class="best">0.892</td></tr>
+      <tr><td class="model">StarDist <span style="color:#999;font-size:11px">n=148</span></td><td>0.766</td><td>0.464</td><td>0.633</td><td>0.585</td><td>0.848</td><td>0.844</td></tr>
     </tbody>
   </table>
 
@@ -76,9 +77,9 @@
 
   <h2>Honest caveats</h2>
   <ul class="caveat">
-    <li>μSAM's whole-cell input is a naive channel-mean grayscale — its 0.51 reflects the harness, not the model's ceiling; a learned 2-channel fusion would likely close much of the gap.</li>
-    <li>StarDist omitted — its pretrained TF build crashes (core-dumped) on this cluster, GPU and CPU.</li>
-    <li>N=297 single-seed point estimates; the +1.5 pts lift is reported without confidence intervals (next: multi-seed + CIs, val-based LR selection).</li>
+    <li>μSAM whole-cell now uses a fair RGB=[membrane, nuclear, membrane] input; the earlier 0.51 was a channel-mean-grayscale strawman, corrected here to 0.736.</li>
+    <li>StarDist runs at N=148 (vs 297) — the largest stable subset before its TF build core-dumps on this cluster; treat its row as indicative.</li>
+    <li>All metrics carry bootstrap 95% CIs. The fine-tune lift is one protocol; a val-based, multi-seed study (<code>finetune_study.py</code>) is the next refinement.</li>
   </ul>
 
   <div class="foot">
