@@ -140,7 +140,12 @@ sbatch --export=ALL,LR=1e-5,EPOCHS=20,MAXN=200 slurm/finetune.sbatch
   epochs — a recipe + measured lift, not an exhaustive hyperparameter search.
 - **AJI compute cost:** the vendored HoVer-Net AJI is O(cells × image) per pair; dense tissue
   (100s of cells/image) makes scoring the slow step, not inference.
-- **μSAM input:** whole-cell μSAM uses a channel-mean grayscale; a learned 2-channel fusion could help.
+- **μSAM whole-cell input:** uses a channel-mean grayscale → μSAM collapses on whole-cell (0.51 F1).
+  A learned 2-channel fusion would likely recover most of that gap; the nuclear result (0.81) shows
+  the model itself is strong.
+- **StarDist omitted:** the pretrained `2D_versatile_fluo` build crashes (`Aborted, core dumped`) on
+  this cluster's TF 2.15 stack — on **both** GPU (after ~275 imgs) and CPU. A documented
+  reproducibility limitation, not a property of StarDist; nuclear is still a fair 2-model comparison.
 - **Not chasing SOTA:** the deliverable is the rigorous, reproducible comparison + failure analysis.
 
 ## License notes
