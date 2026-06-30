@@ -83,8 +83,10 @@ def cmd_report(args):
     results = Path(args.results)
     rows = {}  # (task) -> list of (model, agg)
     for f in sorted(results.glob("*_agg.json")):
+        parts = f.stem.replace("_agg", "").split("_")  # model_task_split (zero-shot only)
+        if len(parts) != 3:
+            continue  # skip tagged (fine-tuned) aggs — those go in the fine-tune delta, not the main table
         agg = json.load(open(f))
-        parts = f.stem.replace("_agg", "").split("_")  # model_task_split
         model, task = parts[0], parts[1]
         rows.setdefault(task, []).append((model, agg))
 

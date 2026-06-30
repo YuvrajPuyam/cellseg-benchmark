@@ -1,12 +1,15 @@
 """Instance + semantic segmentation metrics (runs in the `metrics` conda env).
 
 Anchored on stardist.matching (Hungarian 1-to-1 → PQ, SQ, F1@IoU, precision/recall). Gaps filled:
-AJI/AJI+ from vendored HoVer-Net (third_party/), boundary-F1 (NSD) from MONAI SurfaceDiceMetric.
+AJI/AJI+ and boundary-F1 (NSD). Both are implemented in O(image) form here (contingency table +
+distance transforms) because the reference HoVer-Net AJI and MONAI NSD are O(cells × image) /
+very slow on dense tissue (100s of cells/image → ~80 s/image). The fast AJI is numerically
+identical to the vendored HoVer-Net version (cross-checked in tests against third_party/).
 
-Averaging convention (pinned, and stated in the README):
+Averaging convention (pinned, stated in the README):
   * per-image (macro) is the HEADLINE — mean over images of each per-image metric.
   * dataset-pooled F1/PQ also reported via stardist.matching_dataset(by_image=False).
-Empty-GT images are skipped by default. All masks are integer instance labels (0 = background).
+Empty-GT images are skipped by default. Masks are integer instance labels (0 = background).
 """
 from __future__ import annotations
 
@@ -16,9 +19,69 @@ from pathlib import Path
 import numpy as np
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[2]))  # repo root → third_party importable
-from third_party.hover_net_stats_utils import get_fast_aji, get_fast_aji_plus, remap_label  # noqa: E402
+from third_party.hover_net_stats_utils import remap_label as _hovernet_remap  # noqa: E402
 
 IOU_THRESHOLDS = (0.5, 0.75)
+
+
+def remap_label(m):
+    """Contiguous relabel, robust to masks with no background pixel (where HoVer-Net's crashes)."""
+    m = np.asarray(m).astype(np.int32)
+    if (m == 0).any():
+        return _hovernet_remap(m)
+    ids = np.unique(m)                      # fully-covered mask: relabel every id to 1..N
+    out = np.zeros_like(m)
+    for i, v in enumerate(ids, start=1):
+        out[m == v] = i
+    return out
+
+
+def _iou_areas(true: np.ndarray, pred: np.ndarray):
+    """Return (inter, union, area_t, area_p) for contiguous-labelled masks, O(image)."""
+    nt, npd = int(true.max()), int(pred.max())
+    area_t = np.bincount(true.ravel(), minlength=nt + 1).astype(np.float64)
+    area_p = np.bincount(pred.ravel(), minlength=npd + 1).astype(np.float64)
+    C = np.zeros((nt + 1, npd + 1), dtype=np.int64)
+    np.add.at(C, (true.ravel(), pred.ravel()), 1)   # contingency over all pixels
+    inter = C[1:, 1:].astype(np.float64)            # drop background row/col
+    union = area_t[1:, None] + area_p[None, 1:] - inter
+    return inter, union, area_t, area_p
+
+
+def fast_aji_plus(true: np.ndarray, pred: np.ndarray) -> float:
+    """AJI+ (Hungarian 1-to-1). Identical result to HoVer-Net get_fast_aji_plus, O(image)."""
+    nt, npd = int(true.max()), int(pred.max())
+    if nt == 0 or npd == 0:
+        return 0.0
+    inter, union, area_t, area_p = _iou_areas(true, pred)
+    iou = inter / (union + 1e-6)
+    from scipy.optimize import linear_sum_assignment
+    ri, ci = linear_sum_assignment(-iou)
+    sel = iou[ri, ci] > 0.0
+    pt, pp = ri[sel], ci[sel]
+    overall_inter = inter[pt, pp].sum()
+    overall_union = union[pt, pp].sum()
+    overall_union += area_t[1:][~np.isin(np.arange(nt), pt)].sum()
+    overall_union += area_p[1:][~np.isin(np.arange(npd), pp)].sum()
+    return float(overall_inter / overall_union)
+
+
+def fast_aji(true: np.ndarray, pred: np.ndarray) -> float:
+    """Classic AJI (greedy 1-to-many). Identical to HoVer-Net get_fast_aji, O(image)."""
+    nt, npd = int(true.max()), int(pred.max())
+    if nt == 0 or npd == 0:
+        return 0.0
+    inter, union, area_t, area_p = _iou_areas(true, pred)
+    iou = inter / (union + 1e-6)
+    best_p = iou.argmax(axis=1)
+    best_iou = iou.max(axis=1)
+    pt = np.nonzero(best_iou > 0.0)[0]
+    pp = best_p[pt]
+    overall_inter = inter[pt, pp].sum()
+    overall_union = union[pt, pp].sum()
+    overall_union += area_t[1:][~np.isin(np.arange(nt), pt)].sum()
+    overall_union += area_p[1:][~np.isin(np.arange(npd), np.unique(pp))].sum()
+    return float(overall_inter / overall_union)
 
 
 def dice_semantic(y_true, y_pred) -> float:
@@ -29,20 +92,22 @@ def dice_semantic(y_true, y_pred) -> float:
 
 
 def boundary_f1_nsd(y_true, y_pred, tol: float = 2.0) -> float:
-    """Normalized Surface Dice (boundary-F1) on the binary foreground, tolerance `tol` px."""
-    try:
-        import torch
-        from monai.metrics import compute_surface_dice
+    """Normalized Surface Dice (boundary-F1) on instance boundaries, tolerance `tol` px. O(image)."""
+    from scipy.ndimage import distance_transform_edt
+    from skimage.segmentation import find_boundaries
 
-        def onehot(m):
-            fg = (np.asarray(m) > 0).astype(np.float32)
-            return torch.from_numpy(np.stack([1.0 - fg, fg])[None])  # (1, 2, H, W)
-
-        nsd = compute_surface_dice(onehot(y_pred), onehot(y_true),
-                                   class_thresholds=[tol], include_background=False)
-        return float(np.nan_to_num(nsd.numpy(), nan=0.0).mean())
-    except Exception:
-        return float("nan")
+    gtb = find_boundaries(np.asarray(y_true), mode="inner")   # incl. boundaries between touching cells
+    prb = find_boundaries(np.asarray(y_pred), mode="inner")
+    ng, npx = int(gtb.sum()), int(prb.sum())
+    if ng == 0 and npx == 0:
+        return 1.0
+    if ng == 0 or npx == 0:
+        return 0.0
+    d_to_gt = distance_transform_edt(~gtb)
+    d_to_pr = distance_transform_edt(~prb)
+    pr_close = int((d_to_gt[prb] <= tol).sum())
+    gt_close = int((d_to_pr[gtb] <= tol).sum())
+    return float((pr_close + gt_close) / (npx + ng))
 
 
 def per_image_metrics(y_true, y_pred, iou_thresholds=IOU_THRESHOLDS, boundary=True) -> dict:
@@ -61,9 +126,8 @@ def per_image_metrics(y_true, y_pred, iou_thresholds=IOU_THRESHOLDS, boundary=Tr
             out["pq"] = float(m.panoptic_quality)
             out["sq"] = float(m.mean_matched_score)  # mean IoU over matched pairs
 
-    both = yt.max() > 0 and yp.max() > 0
-    out["aji"] = float(get_fast_aji(yt, yp)) if both else 0.0
-    out["aji_plus"] = float(get_fast_aji_plus(yt, yp)) if both else 0.0
+    out["aji"] = fast_aji(yt, yp)
+    out["aji_plus"] = fast_aji_plus(yt, yp)
     out["dice"] = dice_semantic(yt, yp)
     if boundary:
         out["boundary_f1"] = boundary_f1_nsd(yt, yp)
@@ -85,7 +149,6 @@ def score_split(gt_list, pred_list, iou_thresholds=IOU_THRESHOLDS, skip_empty=Tr
     agg.update({f"{k}_std": float(np.nanstd([r[k] for r in records])) for k in metric_keys})
     agg["n_images"] = len(records)
 
-    # dataset-pooled F1/PQ (secondary convention)
     try:
         from stardist.matching import matching_dataset
         gts = [remap_label(np.asarray(g).astype(np.int32)) for g, p in zip(gt_list, pred_list)
