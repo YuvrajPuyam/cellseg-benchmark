@@ -38,16 +38,38 @@ Two tasks, because StarDist's star-convex prior collapses to near-circles on who
 > Metrics: AJI+ (Hungarian 1-to-1), PQ, F1@IoU, boundary-F1 (NSD, 2 px), Dice.
 
 <!--RESULTS-->
-**Nuclear task** (all metrics: higher is better)
+(higher is better; **bold** = best in column)
 
-| model | F1@0.5 | F1@0.75 | AJI+ | PQ | boundary-F1 | Dice | n |
-|---|---|---|---|---|---|---|---|
-| Cellpose-SAM | **0.841** | 0.530 | **0.710** | **0.651** | 0.895 | 0.871 | 297 |
-| μSAM | 0.810 | **0.601** | 0.702 | 0.648 | **0.907** | **0.892** | 297 |
-| StarDist (2D_versatile_fluo) | _see results/benchmark_tables.md_ | | | | | | |
+**Whole-cell task**
 
-Cellpose-SAM leads on F1@0.5 / AJI+ / PQ; μSAM edges ahead on the stricter F1@0.75 and on
-boundary-F1 (tighter contours). Whole-cell table + StarDist row: `results/benchmark_tables.md`.
+| model | F1@0.5 | F1@0.75 | AJI+ | PQ | boundary-F1 | Dice |
+|---|---|---|---|---|---|---|
+| Cellpose-SAM | **0.844** | **0.591** | **0.718** | **0.670** | **0.869** | **0.902** |
+| μSAM | 0.512 | 0.133 | 0.405 | 0.348 | 0.554 | 0.668 |
+
+**Nuclear task**
+
+| model | F1@0.5 | F1@0.75 | AJI+ | PQ | boundary-F1 | Dice |
+|---|---|---|---|---|---|---|
+| Cellpose-SAM | **0.841** | 0.530 | **0.710** | **0.651** | 0.895 | 0.871 |
+| μSAM | 0.810 | **0.601** | 0.702 | 0.648 | **0.907** | **0.892** |
+
+**Read:** Cellpose-SAM is the most robust across both tasks. On **nuclei** the two are close
+(μSAM even wins the stricter F1@0.75 and boundary-F1 — tighter contours). On **whole-cell**
+Cellpose-SAM wins decisively; μSAM collapses (0.51 F1) under the naive channel-mean grayscale
+input — a fusion limitation, not a verdict on the model. StarDist's pretrained TF build
+segfaults on this driver (GPU) and CPU inference is unstable here, so it's omitted (see Limitations).
+
+**Fine-tuning Cellpose-SAM (whole-cell, 200-image subset, 20 epochs):**
+
+| model | F1@0.5 | AJI+ | PQ | boundary-F1 | Dice |
+|---|---|---|---|---|---|
+| zero-shot | 0.844 | 0.718 | 0.670 | 0.869 | 0.902 |
+| fine-tuned (lr 1e-5) | **0.859** | **0.732** | **0.688** | **0.885** | **0.915** |
+| fine-tuned (lr 5e-5) | 0.843 | 0.715 | 0.671 | 0.869 | 0.905 |
+
+**Fine-tuning lifted whole-cell F1@0.5 by +0.015 (AJI+ +0.014, PQ +0.018, boundary-F1 +0.016)**
+at lr 1e-5; lr 5e-5 was too high (≈flat). Full numbers: [`results/finetune_delta.md`](results/finetune_delta.md).
 <!--/RESULTS-->
 
 **Fine-tuning study (whole-cell):** Cellpose-SAM fine-tuned on a 200-image TissueNet subset,

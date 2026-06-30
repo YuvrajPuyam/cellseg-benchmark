@@ -27,8 +27,26 @@ Cellpose-SAM leads on F1@0.5 / AJI+ / PQ; μSAM wins the stricter F1@0.75 and bo
 
 ### Fine-tuning (whole-cell, Cellpose-SAM)
 <!--FINETUNE-->
-_(filled from `finetune_delta.md` — 200-image subset, LR sweep, 20 epochs)_
+Cellpose-SAM, fine-tuned on a 200-image TissueNet train subset (20 epochs), evaluated on the
+same whole-cell test set:
+
+| | F1@0.5 | AJI+ | PQ | boundary-F1 | Dice |
+|---|---|---|---|---|---|
+| zero-shot | 0.844 | 0.718 | 0.670 | 0.869 | 0.902 |
+| **fine-tuned (lr 1e-5)** | **0.859** | **0.732** | **0.688** | **0.885** | **0.915** |
+| Δ | **+0.015** | **+0.014** | **+0.018** | **+0.016** | **+0.013** |
+
+**Fine-tuning lifted whole-cell F1@0.5 by +1.5 points** (and AJI+ by +1.4) — a small but consistent
+gain across every metric, from just 200 labeled images. lr 5e-5 was too high (≈flat).
 <!--/FINETUNE-->
+
+### Headline takeaways
+- **Cellpose-SAM** is the most robust zero-shot choice across both tasks (esp. whole-cell).
+- On **nuclei** the models are close — pick by whether you weight detection (Cellpose) or
+  boundary tightness (μSAM, best boundary-F1/Dice).
+- **Fine-tuning works**: +1.5 pts whole-cell F1 from 200 images at lr 1e-5.
+- Honest caveat: μSAM's whole-cell input (channel-mean grayscale) is naive — a learned fusion
+  would likely close much of its whole-cell gap. StarDist omitted (unstable on this cluster).
 
 ### Failure analysis
 Touching-cell boundary overlays (GT green vs prediction magenta) in `results/figures/` show where
