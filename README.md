@@ -83,18 +83,22 @@ tests/       synthetic-fixture unit tests (loader normalization, metrics golden 
 results/     committed tables (csv/md) + figures (png)
 ```
 
-## Quickstart (target — not yet runnable end-to-end)
+## Quickstart (validated end-to-end on Gilbreth)
+
+Full working recipe (env build, weight pre-caching, scoring, figures, fine-tune) is in
+[`CLAUDE.md`](CLAUDE.md). In short:
 
 ```bash
-# 0. Prereqs YOU provide: DEEPCELL_ACCESS_TOKEN, Gilbreth -A account, SSH access
-export DEEPCELL_ACCESS_TOKEN=...            # from users.deepcell.org
-python data/download_tissuenet.py --check   # verify token, pull a v1.1 sample
-
-# 1. Build envs on Gilbreth (conda-env-mod; datasets/envs under REPO)
-# 2. Zero-shot benchmark
-sbatch slurm/benchmark.sbatch
-# 3. Fine-tune + LR x data-fraction sweep
-sbatch slurm/finetune.sbatch
+export DEEPCELL_ACCESS_TOKEN=...                 # from users.deepcell.org (see .env)
+python data/download_tissuenet.py                # download + md5-verify + extract v1.1
+bash scripts/gilbreth/build_envs.sh              # + build_envs2.sh: the 3 conda envs
+# zero-shot inference (one model/task per job; weights pre-cached on the login node):
+sbatch --export=ALL,ENV=torch-cell,MODEL=cellpose,TASK=wholecell,LIMIT=300 slurm/benchmark.sbatch
+# stardist runs CPU-side (its GPU TF build segfaults on this driver):
+#   CUDA_VISIBLE_DEVICES="" python -m src.eval.run_benchmark infer --model stardist --task nuclear
+# score + tables + figures + fine-tune delta, all in one scheduler job:
+sbatch slurm/finalize.sbatch                     # -> results/benchmark_tables.md, finetune_delta.md
+sbatch --export=ALL,LR=1e-5,EPOCHS=20,MAXN=200 slurm/finetune.sbatch
 ```
 
 ## Known unvalidated (resolve at build time on cluster)
