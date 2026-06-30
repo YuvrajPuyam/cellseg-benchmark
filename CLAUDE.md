@@ -31,11 +31,15 @@ Never hold an interactive session. Submit detached via `sbatch`, poll with short
 
 - [x] SSH access verified (2026-06-29): logs in as `gupta596`, scratch has room.
 - [x] `csml` partitions confirmed via `slist`: **A30 only**.
-- [x] Repo scaffold present (envs, wrapper contract, configs, metrics/loader stubs).
-- [ ] **TissueNet token — the #1 remaining human blocker.** Register at `users.deepcell.org`,
-      `export DEEPCELL_ACCESS_TOKEN=...`, then `python data/download_tissuenet.py --check`.
+- [x] Repo scaffold present (envs, wrapper contract, configs, loader, downloader).
+- [x] **TissueNet token validated** (2026-06-29) and **v1.1 downloaded + md5-verified on cluster**
+      at `data/tissuenet/tissuenet_v1-1/{train,val,test}.npz` (2580×512² / 3118×256² / 1324×256²,
+      X=[nuclear,whole-cell], y=[whole-cell,nuclear]). Token lives only in local `.env` (never on
+      the cluster); the download used a presigned URL resolved locally.
+- [x] `data/loader.py` written + unit-tested (percentile normalization validated on real sample).
 - [ ] Conda envs not yet built on Gilbreth (`conda-env-mod`, see §4).
-- [ ] Wrappers / loader / metrics not yet validated against real packages.
+- [ ] Model wrappers / metrics not yet validated against real packages.
+- [ ] Zero-shot benchmark + fine-tune not yet run.
 
 ## 3. Update code on Gilbreth
 
