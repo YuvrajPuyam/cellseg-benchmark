@@ -17,10 +17,18 @@ conda activate "/scratch/gilbreth/gupta596/envs/${ENV:-torch-cell}"   # stardist
 
 echo "=== node $(hostname) ==="
 nvidia-smi --query-gpu=name,memory.total --format=csv,noheader
-python - <<'PY'
-import torch
-print("torch", torch.__version__, "cuda_available", torch.cuda.is_available(),
-      torch.cuda.get_device_name(0) if torch.cuda.is_available() else "NO GPU")
+python - <<'PY' || true
+try:
+    import torch
+    print("torch", torch.__version__, "cuda", torch.cuda.is_available(),
+          torch.cuda.get_device_name(0) if torch.cuda.is_available() else "NO GPU")
+except ModuleNotFoundError:
+    pass
+try:
+    import tensorflow as tf
+    print("tf", tf.__version__, "gpus", len(tf.config.list_physical_devices("GPU")))
+except ModuleNotFoundError:
+    pass
 PY
 
 # infer one model/task; weights are pre-cached so no internet is needed on the compute node.
@@ -28,5 +36,5 @@ PY
 #   sbatch --export=ALL,ENV=stardist-tf,MODEL=stardist,TASK=nuclear   slurm/benchmark.sbatch
 python -m src.eval.run_benchmark infer \
     --model "${MODEL:?set MODEL}" --task "${TASK:?set TASK}" --split "${SPLIT:-test}" \
-    ${LIMIT:+--limit ${LIMIT}} --out "$REPO/results/masks"
+    ${LIMIT:+--limit ${LIMIT}} ${TAG:+--tag ${TAG}} --out "$REPO/results/masks"
 echo "BENCH_JOB_DONE"

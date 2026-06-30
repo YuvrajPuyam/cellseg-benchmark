@@ -54,7 +54,8 @@ def cmd_infer(args):
             print(f"  {i + 1} images in {time.time() - t0:.0f}s", flush=True)
     out = Path(args.out)
     out.mkdir(parents=True, exist_ok=True)
-    f = out / f"{args.model}_{args.task}_{args.split}.npz"
+    tag = f"_{args.tag}" if getattr(args, "tag", "") else ""
+    f = out / f"{args.model}_{args.task}_{args.split}{tag}.npz"
     np.savez_compressed(f, pred=np.stack(preds), gt=np.stack(gts))
     print(f"INFER_DONE {f} n={len(preds)} time={time.time() - t0:.0f}s")
 
@@ -116,6 +117,7 @@ def main():
     pi.add_argument("--task", required=True, choices=list(ELIGIBLE))
     pi.add_argument("--split", default="test")
     pi.add_argument("--limit", type=int, default=0, help="0 = all images")
+    pi.add_argument("--tag", default="", help="suffix for output npz (e.g. ft_lr1e-5)")
     pi.add_argument("--out", default=str(ROOT / "results" / "masks"))
     pi.set_defaults(func=cmd_infer)
 
