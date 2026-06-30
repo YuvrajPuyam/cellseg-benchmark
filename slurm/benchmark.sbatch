@@ -1,29 +1,32 @@
 #!/bin/bash
 #SBATCH --job-name=cajal-bench
-#SBATCH --account=csml                 # csml allocation (A30 only)
-#SBATCH --partition=a30                # GPU model selected by partition
+#SBATCH --account=csml
+#SBATCH --partition=a30
 #SBATCH --nodes=1
-#SBATCH --gpus-per-node=1              # == --gres=gpu:1 (RCAC-preferred form)
-#SBATCH --cpus-per-task=8             # A30 nodes have 24 cpu; 8 is plenty per job
-#SBATCH --time=04:00:00               # default is only 30 min — ALWAYS set
-#SBATCH --output=cajal-bench-%j.out
+#SBATCH --gpus-per-node=1
+#SBATCH --cpus-per-task=8
+#SBATCH --mem=60G                     # Gilbreth requires explicit memory; 60G/GPU is the a30 default
+#SBATCH --time=04:00:00               # default walltime is only 30 min — always set
+#SBATCH --output=%x-%j.out
 set -euo pipefail
 
 REPO=/scratch/gilbreth/gupta596/MotionGen/HOI/cajal
 cd "$REPO"
+source /apps/external/anaconda/2025.06/etc/profile.d/conda.sh
+conda activate "/scratch/gilbreth/gupta596/envs/${ENV:-torch-cell}"   # stardist-tf for stardist
 
-module purge
-module load anaconda                  # confirm exact ver via `module spider anaconda`
-module use "$HOME/privatemodules"
-module load conda-env/"${ENVNAME:?set ENVNAME, e.g. torch-cell-py3.10}"   # built with conda-env-mod
+echo "=== node $(hostname) ==="
+nvidia-smi --query-gpu=name,memory.total --format=csv,noheader
+python - <<'PY'
+import torch
+print("torch", torch.__version__, "cuda_available", torch.cuda.is_available(),
+      torch.cuda.get_device_name(0) if torch.cuda.is_available() else "NO GPU")
+PY
 
-nvidia-smi                            # log hardware/driver into results for reproducibility
-python -c "import torch;print('torch',torch.__version__,torch.version.cuda,torch.cuda.get_device_name(0))" 2>/dev/null || true
-
-# one model per submission (TF and PyTorch can't share a GPU env): pass MODEL + ENVNAME via --export
-#   sbatch --export=ALL,MODEL=cellpose,ENVNAME=torch-cell-py3.10  slurm/benchmark.sbatch
-python -m src.eval.run_benchmark \
-    --model "${MODEL:?set MODEL (cellpose|microsam|stardist)}" \
-    --split "${SPLIT:-test}" \
-    --seed 42 \
-    --out "$REPO/results/$SLURM_JOB_ID"
+# infer one model/task; weights are pre-cached so no internet is needed on the compute node.
+#   sbatch --export=ALL,ENV=torch-cell,MODEL=cellpose,TASK=wholecell  slurm/benchmark.sbatch
+#   sbatch --export=ALL,ENV=stardist-tf,MODEL=stardist,TASK=nuclear   slurm/benchmark.sbatch
+python -m src.eval.run_benchmark infer \
+    --model "${MODEL:?set MODEL}" --task "${TASK:?set TASK}" --split "${SPLIT:-test}" \
+    ${LIMIT:+--limit ${LIMIT}} --out "$REPO/results/masks"
+echo "BENCH_JOB_DONE"

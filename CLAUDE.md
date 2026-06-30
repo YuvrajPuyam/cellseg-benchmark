@@ -48,28 +48,46 @@ scp -o BatchMode=yes -o ConnectTimeout=20 D:/cajal/<path> \
   gilbreth.rcac.purdue.edu:/scratch/gilbreth/gupta596/MotionGen/HOI/cajal/<path>
 ```
 
-## 4. Build the conda envs (datasets/envs in scratch — home is 25 GB)
+## 4. Build the conda envs  (the ACTUAL working recipe — `module`/`conda-env-mod` are flaky non-interactively)
+
+`module` and `$RCAC_SCRATCH` are NOT set in non-interactive ssh. conda is on PATH directly at
+`/apps/external/anaconda/2025.06`. Build with plain conda (see `scripts/gilbreth/build_envs*.sh`):
 
 ```bash
-# on Gilbreth, under REPO:
-module load anaconda                                  # confirm exact ver via `module spider anaconda`
-conda-env-mod create -p $RCAC_SCRATCH/envs/torch-cell --jupyter   # cellpose + micro_sam (PyTorch)
-conda-env-mod create -p $RCAC_SCRATCH/envs/stardist-tf --jupyter  # stardist + TF2 (separate; CUDA clash)
-conda-env-mod create -p $RCAC_SCRATCH/envs/metrics --jupyter      # scoring (framework-agnostic)
-# then pip-install per envs/*.yml inside each, and GPU-validate:
-#   torch-cell : python -c "import cellpose, micro_sam, torch; print(torch.cuda.is_available())"
-#   stardist-tf: python -c "import tensorflow as tf; print(tf.config.list_physical_devices('GPU'))"
+source /apps/external/anaconda/2025.06/etc/profile.d/conda.sh
+SCRATCH=/scratch/gilbreth/gupta596 ; export PIP_CACHE_DIR=$SCRATCH/.pipcache CONDA_PKGS_DIRS=$SCRATCH/.condapkgs
+conda create -y -p $SCRATCH/envs/torch-cell python=3.10
+conda activate $SCRATCH/envs/torch-cell
+pip install torch==2.5.* torchvision --index-url https://download.pytorch.org/whl/cu121
+pip install cellpose micro_sam            # micro_sam pulls Qt → do NOT `set -u` (qt hook = unbound var)
+# stardist-tf:  pip install "tensorflow[and-cuda]==2.15.*" stardist csbdeep
+# metrics    :  conda create ... numpy scipy scikit-image matplotlib pandas ; pip install stardist monai tifffile
 ```
+
+Built envs live at `$SCRATCH/envs/{torch-cell,stardist-tf,metrics}`.
+
+**GPU gotchas (hard-won):**
+- The **login node GPU is MPS-gated** → `torch.cuda.is_available()` is **False** there (Error 805).
+  Run all GPU work via `sbatch` on a compute node (there it's True). Driver 590 / CUDA 13.1.
+- **Compute nodes have no internet** → pre-cache model weights on the login node first:
+  cpsam → `~/.cellpose/models/cpsam_v2`; micro_sam vit_b_lm via `get_predictor_and_segmenter(..., device="cpu")`.
+- Gilbreth requires explicit `--mem` (use `--mem=60G` per a30 GPU).
 
 ## 5. Run the benchmark
 
 ```bash
-# inference (zero-shot) — one model per job, GPU handed off between them
-sbatch slurm/benchmark.sbatch        # wired for --account=csml --partition=a30
-# fine-tune + LR x data-fraction sweep
-sbatch slurm/finetune.sbatch
-# poll:
-ssh ... 'squeue -u gupta596'
+# infer (one model/task per job; weights pre-cached). torch-cell for cellpose/microsam, stardist-tf for stardist:
+sbatch --export=ALL,ENV=torch-cell,MODEL=cellpose,TASK=wholecell,LIMIT=300 slurm/benchmark.sbatch
+sbatch --export=ALL,ENV=torch-cell,MODEL=microsam,TASK=nuclear,LIMIT=300  slurm/benchmark.sbatch
+sbatch --export=ALL,ENV=stardist-tf,MODEL=stardist,TASK=nuclear,LIMIT=300 slurm/benchmark.sbatch
+# score (metrics env, CPU — runs fine on the login node, no GPU/MPS needed):
+conda activate $SCRATCH/envs/metrics
+python -m src.eval.run_benchmark score --pred-npz results/masks/cellpose_wholecell_test.npz
+python -m src.eval.run_benchmark report          # collate → results/benchmark_tables.md
+# figures:
+python -m src.viz.plots --task nuclear --split test --indices 3,7,12
+# fine-tune (small) then eval the checkpoint via CAJAL_CELLPOSE_CKPT (see src/train/finetune.py):
+sbatch --export=ALL,LR=1e-5,FRACTION=1.0,EPOCHS=20,MAXN=200 slurm/finetune.sbatch
 ```
 
 ## 6. Gotchas
