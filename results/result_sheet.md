@@ -14,7 +14,15 @@ Reproducible benchmark of Cellpose-SAM, μSAM, and StarDist on TissueNet v1.1 (P
 
 ### Headline numbers
 <!--HEADLINE-->
-_(filled from the committed run — see `benchmark_tables.md`)_
+**Nuclear task** (per-image macro, N=297):
+
+| model | F1@0.5 | F1@0.75 | AJI+ | PQ | boundary-F1 | Dice |
+|---|---|---|---|---|---|---|
+| Cellpose-SAM | **0.841** | 0.530 | **0.710** | **0.651** | 0.895 | 0.871 |
+| μSAM | 0.810 | **0.601** | 0.702 | 0.648 | **0.907** | **0.892** |
+
+Cellpose-SAM leads on F1@0.5 / AJI+ / PQ; μSAM wins the stricter F1@0.75 and boundary-F1
+(tighter contours). Whole-cell table + StarDist row: `benchmark_tables.md`.
 <!--/HEADLINE-->
 
 ### Fine-tuning (whole-cell, Cellpose-SAM)
