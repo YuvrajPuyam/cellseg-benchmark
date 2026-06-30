@@ -148,6 +148,22 @@ sbatch --export=ALL,LR=1e-5,EPOCHS=20,MAXN=200 slurm/finetune.sbatch
   reproducibility limitation, not a property of StarDist; nuclear is still a fair 2-model comparison.
 - **Not chasing SOTA:** the deliverable is the rigorous, reproducible comparison + failure analysis.
 
+### Hardened in code (a rigor pass — numbers update on the next cluster run)
+
+The methodology weaknesses above are now addressed in the eval engine; the reported numbers refresh
+once the pipeline is re-run on Gilbreth:
+- **Seeded random subset** — `run_benchmark infer --sample N --seed S` replaces the biased first-N
+  `--limit` (`data.loader.sample_indices`).
+- **Variance + significance** — every metric now carries a percentile **bootstrap 95% CI**
+  (`metrics.bootstrap_ci`); `report` renders `mean ±ci`. The fine-tune lift gets a **paired** bootstrap
+  CI (`metrics.paired_bootstrap_delta_ci`) — a CI excluding 0 means a significant lift.
+- **Fair μSAM whole-cell** — input is now RGB `[membrane, nuclear, membrane]` (was channel-mean),
+  preserving the boundary signal μSAM needs.
+- **No LR-on-test** — `src/train/finetune_study.py` selects the LR on **val**, then reports **test**
+  across ≥3 seeds (`finetune.py` now seeds torch/CUDA so seeds actually differ).
+- **Interactive dashboard** — `python -m src.viz.build_dashboard` → a standalone `results/dashboard.html`
+  (sortable tables, metric bars, base64 failure-case gallery).
+
 ## License notes
 
 - Cellpose `cpsam` weights are **CC-BY-NC** — research/portfolio use only, not commercial.
