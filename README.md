@@ -1,10 +1,24 @@
-# Cell/Tissue Segmentation Foundation-Model Benchmark
+# cajal — Cell/Tissue Segmentation Foundation-Model Benchmark
+
+> Codename **cajal**, after Santiago Ramón y Cajal, who hand-segmented cells from stained
+> tissue under a microscope. Sister project to `laplace`.
 
 A reproducible benchmark answering *"which segmentation foundation model — Cellpose-SAM,
 μSAM, or StarDist — works on my multiplexed tissue, and how much does fine-tuning buy?"*
 
-> **Status:** scaffold. Code is being written ahead of cluster access. Version pins in
+> **Status:** scaffold + cluster wiring. SSH access to Gilbreth is verified. Version pins in
 > `envs/*.yml` are best-effort and **must be validated on Gilbreth** (see "Known unvalidated").
+
+## Gilbreth coordinates (verified 2026-06-29)
+
+```
+HOST   = gilbreth.rcac.purdue.edu        # key-based via ~/.ssh/config (gupta596), bypasses Duo
+REPO   = /scratch/gilbreth/gupta596/MotionGen/HOI/cajal   # cluster home; keep all work under here
+ACCT   = csml        PARTITION = a30     # csml has A30 only (24 GB, 24 cpu/node); no A100/H100
+SCRATCH= /scratch/gilbreth/gupta596      # $RCAC_SCRATCH; 2.1 TB used of 200 TB
+```
+
+Cold-start runbook for a fresh session: see [`CLAUDE.md`](CLAUDE.md).
 
 ## What this is
 
@@ -53,10 +67,10 @@ results/     committed tables (csv/md) + figures (png)
 export DEEPCELL_ACCESS_TOKEN=...            # from users.deepcell.org
 python data/download_tissuenet.py --check   # verify token, pull a v1.1 sample
 
-# 1. Build envs on Gilbreth (conda-env-mod; datasets/envs in $RCAC_SCRATCH)
-# 2. Zero-shot benchmark (fits free standby QOS)
+# 1. Build envs on Gilbreth (conda-env-mod; datasets/envs under REPO)
+# 2. Zero-shot benchmark
 sbatch slurm/benchmark.sbatch
-# 3. Fine-tune + LR x data-fraction sweep (needs your account queue)
+# 3. Fine-tune + LR x data-fraction sweep
 sbatch slurm/finetune.sbatch
 ```
 
@@ -65,7 +79,8 @@ sbatch slurm/finetune.sbatch
 - Exact `cellpose` / `stardist` / `monai` / `micro_sam` versions at lock.
 - μSAM's effective torch pin (docs say 2.1.1–2.2.0; `master` wants ≥2.5) — must co-import
   cleanly with cellpose in `torch-cell`, else split into a third subprocess env.
-- Gilbreth partition / module names (`slist`, `module spider`).
+- Whether `csml` exposes a free `standby`-style QOS for inference (check `slist`/`myquota`).
+- Anaconda + cuda/cudnn module versions on Gilbreth (`module spider`).
 - TissueNet license text + µm/px.
 
 ## License notes

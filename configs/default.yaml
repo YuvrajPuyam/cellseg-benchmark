@@ -2,11 +2,18 @@
 seed: 42
 
 paths:
-  # set at runtime: data_root: ${RCAC_SCRATCH}/cell-seg-benchmark/data
+  # On Gilbreth, REPO = /scratch/gilbreth/gupta596/MotionGen/HOI/cajal (keep all work under REPO).
+  # data_root defaults to REPO/data; override on the CLI for local dev.
   data_root: data
   masks_dir: results/masks      # masks/{model}/{split}/*.tif
   results_dir: results
   tissuenet_version: "1.1"
+
+gilbreth:
+  account: csml
+  partition: a30                # csml has A30 only (24 GB, 24 cpu/node); no A100/H100
+  scratch: /scratch/gilbreth/gupta596
+  repo: /scratch/gilbreth/gupta596/MotionGen/HOI/cajal
 
 data:
   # TissueNet is NOT pre-normalized — loader applies this before any model sees an image.
