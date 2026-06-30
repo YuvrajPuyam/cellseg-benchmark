@@ -1,0 +1,39 @@
+# Default run config. Paths point at $RCAC_SCRATCH on Gilbreth; override per-run on the CLI.
+seed: 42
+
+paths:
+  # set at runtime: data_root: ${RCAC_SCRATCH}/cell-seg-benchmark/data
+  data_root: data
+  masks_dir: results/masks      # masks/{model}/{split}/*.tif
+  results_dir: results
+  tissuenet_version: "1.1"
+
+data:
+  # TissueNet is NOT pre-normalized — loader applies this before any model sees an image.
+  normalize:
+    method: percentile          # per-image 1st–99.5th percentile clip + rescale
+    p_low: 1.0
+    p_high: 99.5
+    arcsinh: false              # optional cofactor transform; off by default
+
+models:
+  cellpose:
+    flow_threshold: 0.4
+    cellprob_threshold: 0.0
+  microsam:
+    model_type: vit_b_lm        # light-microscopy/tissue checkpoint
+    ndim: 2
+  stardist:
+    pretrained: "2D_versatile_fluo"   # fluorescence nuclei; nuclear task only
+
+metrics:
+  iou_thresholds: [0.5, 0.75]
+  averaging: per_image          # macro (per-image) is the default; also report dataset-pooled
+  empty_image: skip             # how to score images with no GT instances (skip | zero)
+  aji_variant: aji_plus         # prefer AJI+ (1-to-1) over greedy classic AJI
+
+finetune:
+  base_model: cellpose          # cellpose (train_seg) | microsam (train_sam)
+  lr_sweep: [1.0e-5, 1.0e-4]
+  data_fractions: [0.25, 1.0]
+  epochs: 100

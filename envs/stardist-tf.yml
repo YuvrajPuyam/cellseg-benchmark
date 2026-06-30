@@ -1,0 +1,21 @@
+# stardist-tf — TensorFlow env for StarDist (nuclear task only on TissueNet).
+# Kept fully separate from torch-cell: TF and PyTorch pin conflicting CUDA/cuDNN.
+# VALIDATE ON GILBRETH: `python -c "import tensorflow as tf; print(tf.config.list_physical_devices('GPU'))"`
+# Native-Windows GPU TF was dropped after 2.10 — only build/run this on Linux (Gilbreth) or WSL2.
+name: stardist-tf
+channels:
+  - conda-forge
+  - nodefaults
+dependencies:
+  - python=3.10
+  - pip
+  - pip:
+      # TF GPU matched to the node's CUDA/cuDNN modules; pick the version your loaded
+      # cuda/cudnn modules support (check `module spider cuda cudnn`), e.g. tensorflow==2.15.*
+      - "tensorflow[and-cuda]"
+      - "stardist"                  # pin exact version after resolving against the TF version
+      - "csbdeep"                   # stardist dependency; provides normalize()
+      - tifffile                    # mask handoff on disk
+      - numpy
+      - scikit-image
+      - pyyaml

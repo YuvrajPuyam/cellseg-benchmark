@@ -1,0 +1,23 @@
+# torch-cell — PyTorch env for Cellpose-SAM (cpsam) + micro_sam (μSAM).
+# Both are PyTorch; they share this env IF their torch pins reconcile.
+# VALIDATE ON GILBRETH: `python -c "import cellpose, micro_sam, torch; print(torch.cuda.is_available())"`
+# If cellpose and micro_sam fight over the torch version, split micro_sam into its own env —
+# the subprocess design makes that a config change, not a rewrite.
+name: torch-cell
+channels:
+  - conda-forge
+  - nodefaults
+dependencies:
+  - python=3.10
+  - pip
+  # CUDA-matched PyTorch is installed via pip on the cluster to match the node's CUDA 12.1.
+  - pip:
+      # torch/vision pulled from the cu121 index on-cluster, e.g.:
+      #   pip install torch==2.5.* torchvision --index-url https://download.pytorch.org/whl/cu121
+      - "cellpose>=4.0,<5"          # 4.x ships the cpsam checkpoint; channels= arg dropped
+      - "micro_sam"                 # pin exact version after resolving torch floor (>=2.5 on master)
+      - tifffile                    # mask handoff on disk
+      - numpy
+      - scikit-image
+      - pyyaml
+# NOTE: do NOT add tensorflow here — TF + torch GPU stacks clash. StarDist lives in stardist-tf.yml.

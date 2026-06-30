@@ -1,0 +1,22 @@
+# metrics — framework-agnostic scoring env. No DL framework loads here, so metric numbers
+# never depend on which of torch/TF produced the masks. Reads GT + pred masks from disk.
+# Anchor: stardist.matching (PQ, F1@IoU, precision/recall — Hungarian, optimal 1-to-1).
+# Gaps filled: AJI/AJI+ via vendored HoVer-Net (third_party/), boundary-F1 via MONAI NSD.
+name: metrics
+channels:
+  - conda-forge
+  - nodefaults
+dependencies:
+  - python=3.10
+  - pip
+  - numpy
+  - scipy
+  - scikit-image
+  - matplotlib            # overlays / touching-cell figures
+  - pandas                # results tables
+  - pip:
+      - "stardist"        # matching/matching_dataset; CPU-only here is fine (no predict)
+      - "monai"           # Dice/IoU + SurfaceDiceMetric (NSD = boundary-F1)
+      - tifffile
+      - pyyaml
+# torchmetrics.Dice was removed in v1.7 — do NOT depend on it. Use MONAI for Dice.

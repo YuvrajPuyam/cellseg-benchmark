@@ -1,0 +1,31 @@
+# data + model caches (never commit — TissueNet is non-commercial gated)
+data/raw/
+data/cache/
+*.npz
+*.npy
+*.tif
+*.tiff
+!tests/fixtures/*.npz   # tiny synthetic fixtures are OK to commit
+
+# model checkpoints / weights
+*.pth
+*.pt
+*.h5
+checkpoints/
+
+# results: commit tables + figures, not raw per-image dumps
+results/**/per_image/
+results/**/*.log
+
+# python
+__pycache__/
+*.py[cod]
+.venv/
+.ipynb_checkpoints/
+
+# slurm job output
+slurm/*.out
+*-*.out
+
+# secrets — DEEPCELL_ACCESS_TOKEN lives in the environment, never in the repo
+.env
