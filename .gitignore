@@ -16,6 +16,8 @@ checkpoints/
 # results: commit tables + figures, not raw per-image dumps
 results/**/per_image/
 results/**/*.log
+# 6 MB generated artifact (base64-inlines committed figures); regenerate via src/viz/build_dashboard.py
+results/dashboard.html
 
 # python
 __pycache__/

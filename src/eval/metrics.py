@@ -22,6 +22,50 @@ sys.path.insert(0, str(Path(__file__).resolve().parents[2]))  # repo root → th
 from third_party.hover_net_stats_utils import remap_label as _hovernet_remap  # noqa: E402
 
 IOU_THRESHOLDS = (0.5, 0.75)
+N_BOOTSTRAP = 2000
+CI_SEED = 0
+
+
+def bootstrap_ci(values, n_boot: int = N_BOOTSTRAP, seed: int = CI_SEED, alpha: float = 0.05):
+    """Percentile bootstrap (lo, hi) for the MEAN of a per-image metric array.
+
+    Resamples images with replacement ``n_boot`` times (seeded → reproducible) and returns the
+    (alpha/2, 1-alpha/2) percentiles of the bootstrap mean distribution. NaNs are dropped first;
+    fewer than 2 finite values yields (nan, nan).
+    """
+    v = np.asarray(values, dtype=np.float64)
+    v = v[np.isfinite(v)]
+    if v.size < 2:
+        return (float("nan"), float("nan"))
+    rng = np.random.default_rng(seed)
+    idx = rng.integers(0, v.size, size=(n_boot, v.size))
+    means = v[idx].mean(axis=1)
+    lo, hi = np.percentile(means, [100 * alpha / 2, 100 * (1 - alpha / 2)])
+    return (float(lo), float(hi))
+
+
+def paired_bootstrap_delta_ci(values_a, values_b, n_boot: int = N_BOOTSTRAP, seed: int = CI_SEED,
+                              alpha: float = 0.05):
+    """Paired bootstrap 95% CI for the mean per-image difference ``a - b`` (e.g. fine-tune lift).
+
+    ``values_a`` and ``values_b`` are aligned per-image metric arrays (same image order, same
+    length). Resampling shares the image index across both models so the pairing — and thus the
+    correlation between models on the same image — is preserved. Returns
+    ``(mean_delta, lo, hi)``; a CI excluding 0 indicates a significant difference at ``alpha``.
+    """
+    a = np.asarray(values_a, dtype=np.float64)
+    b = np.asarray(values_b, dtype=np.float64)
+    if a.shape != b.shape:
+        raise ValueError(f"paired arrays must align: {a.shape} vs {b.shape}")
+    d = a - b
+    d = d[np.isfinite(d)]
+    if d.size < 2:
+        return (float(np.nan if d.size == 0 else d.mean()), float("nan"), float("nan"))
+    rng = np.random.default_rng(seed)
+    idx = rng.integers(0, d.size, size=(n_boot, d.size))
+    means = d[idx].mean(axis=1)
+    lo, hi = np.percentile(means, [100 * alpha / 2, 100 * (1 - alpha / 2)])
+    return (float(d.mean()), float(lo), float(hi))
 
 
 def remap_label(m):
@@ -147,6 +191,9 @@ def score_split(gt_list, pred_list, iou_thresholds=IOU_THRESHOLDS, skip_empty=Tr
     metric_keys = [k for k in records[0] if k not in ("idx", "n_true", "n_pred")] if records else []
     agg = {f"{k}_mean": float(np.nanmean([r[k] for r in records])) for k in metric_keys}
     agg.update({f"{k}_std": float(np.nanstd([r[k] for r in records])) for k in metric_keys})
+    for k in metric_keys:                          # per-image bootstrap 95% CI of the mean
+        lo, hi = bootstrap_ci([r[k] for r in records])
+        agg[f"{k}_ci_lo"], agg[f"{k}_ci_hi"] = lo, hi
     agg["n_images"] = len(records)
 
     try:

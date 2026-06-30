@@ -20,7 +20,7 @@ import numpy as np
 
 ROOT = Path(__file__).resolve().parents[2]
 sys.path.insert(0, str(ROOT))
-from data.loader import load_npz  # noqa: E402
+from data.loader import load_npz, sample_indices  # noqa: E402
 
 WRAPPERS = {
     "cellpose": "src.models.cellpose_wrapper",
@@ -41,8 +41,16 @@ def cmd_infer(args):
     wrap = importlib.import_module(WRAPPERS[args.model])
     preds, gts = [], []
     t0 = time.time()
+    keep = None  # seeded-random subset of image indices (overrides first-N --limit when set)
+    if getattr(args, "sample", 0):
+        n_total = int(np.load(_split_path(args.split), allow_pickle=True)["X"].shape[0])
+        keep = set(int(j) for j in sample_indices(n_total, args.sample, args.seed))
+        print(f"  sampling {len(keep)}/{n_total} images (seed={args.seed})", flush=True)
     for i, s in enumerate(load_npz(_split_path(args.split), normalize=False)):
-        if args.limit and i >= args.limit:
+        if keep is not None:
+            if i not in keep:
+                continue
+        elif args.limit and i >= args.limit:
             break
         gt = s.wholecell if args.task == "wholecell" else s.nuclear
         if gt is None:
@@ -79,6 +87,18 @@ def cmd_score(args):
           f"aji_plus={agg.get('aji_plus_mean'):.4f} n={agg['n_images']}")
 
 
+def _fmt_metric(agg, k):
+    """Render one metric cell as 'mean ±ci' (half-width of the bootstrap 95% CI) when the CI is
+    present, else the plain mean, else an em dash. The plain mean stays available in the JSON."""
+    v = agg.get(f"{k}_mean")
+    if not isinstance(v, (int, float)):
+        return "—"
+    lo, hi = agg.get(f"{k}_ci_lo"), agg.get(f"{k}_ci_hi")
+    if isinstance(lo, (int, float)) and isinstance(hi, (int, float)) and np.isfinite(lo) and np.isfinite(hi):
+        return f"{v:.3f} ±{(hi - lo) / 2:.3f}"
+    return f"{v:.3f}"
+
+
 def cmd_report(args):
     results = Path(args.results)
     rows = {}  # (task) -> list of (model, agg)
@@ -99,10 +119,7 @@ def cmd_report(args):
         sep = "|" + "---|" * (len(REPORT_METRICS) + 2)
         lines += [header, sep]
         for model, agg in sorted(rows[task]):
-            cells = []
-            for k in REPORT_METRICS:
-                v = agg.get(f"{k}_mean")
-                cells.append(f"{v:.3f}" if isinstance(v, (int, float)) else "—")
+            cells = [_fmt_metric(agg, k) for k in REPORT_METRICS]
             lines.append(f"| {model} | " + " | ".join(cells) + f" | {agg.get('n_images', '?')} |")
     out = Path(args.out)
     out.write_text("\n".join(lines) + "\n", encoding="utf-8")
@@ -118,7 +135,10 @@ def main():
     pi.add_argument("--model", required=True, choices=list(WRAPPERS))
     pi.add_argument("--task", required=True, choices=list(ELIGIBLE))
     pi.add_argument("--split", default="test")
-    pi.add_argument("--limit", type=int, default=0, help="0 = all images")
+    pi.add_argument("--limit", type=int, default=0, help="first-N images (0 = all)")
+    pi.add_argument("--sample", type=int, default=0,
+                    help="seeded-random N images instead of first-N --limit (0 = off)")
+    pi.add_argument("--seed", type=int, default=0, help="rng seed for --sample")
     pi.add_argument("--tag", default="", help="suffix for output npz (e.g. ft_lr1e-5)")
     pi.add_argument("--out", default=str(ROOT / "results" / "masks"))
     pi.set_defaults(func=cmd_infer)

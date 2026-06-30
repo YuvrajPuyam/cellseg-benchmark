@@ -68,6 +68,20 @@ def load_npz(path, normalize: bool = True, p_low: float = 1.0, p_high: float = 9
         yield Sample(image=img, wholecell=wc, nuclear=nuc)
 
 
+def sample_indices(n_total: int, n: int, seed: int) -> np.ndarray:
+    """Deterministic-random subset of ``n`` image indices from ``range(n_total)``.
+
+    Uses ``np.random.default_rng(seed)`` so a (n_total, n, seed) triple always selects the same
+    images — the seeded counterpart to a first-N ``--limit``. Returned indices are sorted so the
+    yielded order still matches on-disk order. If ``n >= n_total`` (or ``n <= 0``) all indices are
+    returned (sampling without replacement can't exceed the population).
+    """
+    if n <= 0 or n >= n_total:
+        return np.arange(n_total)
+    rng = np.random.default_rng(seed)
+    return np.sort(rng.choice(n_total, size=n, replace=False))
+
+
 def _selftest(sample_path: str) -> None:
     n = 0
     for s in load_npz(sample_path):
