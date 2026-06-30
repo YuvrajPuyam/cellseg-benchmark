@@ -31,6 +31,20 @@ Two tasks, because StarDist's star-convex prior collapses to near-circles on who
 - **Whole-cell:** Cellpose-SAM, μSAM
 - **Nuclear:** StarDist, Cellpose-SAM, μSAM
 
+## Results
+
+> TissueNet v1.1 **test** split, N=300 images (256×256), per-image (macro) averaging,
+> empty-GT images skipped. Full auto-generated tables: [`results/benchmark_tables.md`](results/benchmark_tables.md).
+> Metrics: AJI+ (Hungarian 1-to-1), PQ, F1@IoU, boundary-F1 (NSD, 2 px), Dice.
+
+<!--RESULTS-->
+_Populated from the committed benchmark run — see `results/benchmark_tables.md`._
+<!--/RESULTS-->
+
+**Fine-tuning study (whole-cell):** Cellpose-SAM fine-tuned on a 200-image TissueNet subset,
+LR sweep {1e-5, 5e-5}, 20 epochs — zero-shot vs fine-tuned delta reported in
+[`results/finetune_delta.md`](results/finetune_delta.md).
+
 ## Architecture
 
 TensorFlow (StarDist) and PyTorch (Cellpose-SAM, μSAM) pin conflicting CUDA/cuDNN stacks, so
