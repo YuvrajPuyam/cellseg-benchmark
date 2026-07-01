@@ -11,7 +11,8 @@ CONDA=/apps/external/anaconda/2025.06/etc/profile.d/conda.sh
 SCRATCH=/scratch/gilbreth/gupta596
 LRS="1e-5 3e-5"
 SWEEP_EPOCHS=6
-FINAL_EPOCHS=20
+FINAL_EPOCHS=12   # full 2580-img data → ~8x the gradient exposure of the 200-img run; also fits the
+                 # 3.5h standby walltime with buffer and reduces over-training vs 20 epochs.
 SEEDS="0 1 2"
 LIM=300
 
