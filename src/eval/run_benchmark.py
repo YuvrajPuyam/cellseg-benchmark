@@ -92,7 +92,7 @@ def _fmt_metric(agg, k):
     present, else the plain mean, else an em dash. The plain mean stays available in the JSON."""
     v = agg.get(f"{k}_mean")
     if not isinstance(v, (int, float)):
-        return "—"
+        return "-"
     lo, hi = agg.get(f"{k}_ci_lo"), agg.get(f"{k}_ci_hi")
     if isinstance(lo, (int, float)) and isinstance(hi, (int, float)) and np.isfinite(lo) and np.isfinite(hi):
         return f"{v:.3f} ±{(hi - lo) / 2:.3f}"
@@ -105,7 +105,7 @@ def cmd_report(args):
     for f in sorted(results.glob("*_agg.json")):
         parts = f.stem.replace("_agg", "").split("_")  # model_task_split (zero-shot only)
         if len(parts) != 3:
-            continue  # skip tagged (fine-tuned) aggs — those go in the fine-tune delta, not the main table
+            continue  # skip tagged (fine-tuned) aggs - those go in the fine-tune delta, not the main table
         agg = json.load(open(f))
         model, task = parts[0], parts[1]
         rows.setdefault(task, []).append((model, agg))

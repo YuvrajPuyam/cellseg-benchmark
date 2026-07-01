@@ -1,4 +1,4 @@
-# cajal — cold-start runbook for Gilbreth
+# cajal - cold-start runbook for Gilbreth
 
 Sister project to `laplace`. Everything a fresh session needs to operate the cell/tissue
 segmentation benchmark on Purdue's Gilbreth cluster. Copy-pasteable. Paths are hard-coded.
@@ -15,7 +15,7 @@ SCRATCH= /scratch/gilbreth/gupta596      # $RCAC_SCRATCH; home is 25 GB so keep 
 ```
 
 Containment: only write under `REPO`. Never `$HOME`, never `HOI/laplace`, never other scratch.
-`cajal` is a sibling of `HOI/laplace` — a separate project, not laplace work.
+`cajal` is a sibling of `HOI/laplace` - a separate project, not laplace work.
 
 ## 1. SSH (non-interactive, key-based)
 
@@ -48,7 +48,7 @@ scp -o BatchMode=yes -o ConnectTimeout=20 D:/cajal/<path> \
   gilbreth.rcac.purdue.edu:/scratch/gilbreth/gupta596/MotionGen/HOI/cajal/<path>
 ```
 
-## 4. Build the conda envs  (the ACTUAL working recipe — `module`/`conda-env-mod` are flaky non-interactively)
+## 4. Build the conda envs  (the ACTUAL working recipe - `module`/`conda-env-mod` are flaky non-interactively)
 
 `module` and `$RCAC_SCRATCH` are NOT set in non-interactive ssh. conda is on PATH directly at
 `/apps/external/anaconda/2025.06`. Build with plain conda (see `scripts/gilbreth/build_envs*.sh`):
@@ -80,7 +80,7 @@ Built envs live at `$SCRATCH/envs/{torch-cell,stardist-tf,metrics}`.
 sbatch --export=ALL,ENV=torch-cell,MODEL=cellpose,TASK=wholecell,LIMIT=300 slurm/benchmark.sbatch
 sbatch --export=ALL,ENV=torch-cell,MODEL=microsam,TASK=nuclear,LIMIT=300  slurm/benchmark.sbatch
 sbatch --export=ALL,ENV=stardist-tf,MODEL=stardist,TASK=nuclear,LIMIT=300 slurm/benchmark.sbatch
-# score (metrics env, CPU — runs fine on the login node, no GPU/MPS needed):
+# score (metrics env, CPU - runs fine on the login node, no GPU/MPS needed):
 conda activate $SCRATCH/envs/metrics
 python -m src.eval.run_benchmark score --pred-npz results/masks/cellpose_wholecell_test.npz
 python -m src.eval.run_benchmark report          # collate → results/benchmark_tables.md
@@ -92,10 +92,10 @@ sbatch --export=ALL,LR=1e-5,FRACTION=1.0,EPOCHS=20,MAXN=200 slurm/finetune.sbatc
 
 ## 6. Gotchas
 
-- `csml` = A30 only. Don't request a100/h100 partitions — the job will never start.
-- Default walltime on Gilbreth is 30 min — **always set `--time`** in the sbatch.
+- `csml` = A30 only. Don't request a100/h100 partitions - the job will never start.
+- Default walltime on Gilbreth is 30 min - **always set `--time`** in the sbatch.
 - A30 = 24 GB. Cellpose/μSAM at 512×512 fit comfortably; batch modestly for fine-tune.
-- TF (StarDist) and PyTorch (Cellpose/μSAM) must stay in separate envs — never co-install.
+- TF (StarDist) and PyTorch (Cellpose/μSAM) must stay in separate envs - never co-install.
 - Confirm anaconda + cuda/cudnn module versions with `module spider` before building envs.
 
 ## 7. The plan

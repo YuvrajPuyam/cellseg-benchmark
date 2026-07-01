@@ -55,7 +55,7 @@ def run(lr: float, fraction: float, epochs: int, out: str, seed: int = 42, max_n
     from cellpose import models, train
 
     _seed_everything(seed)
-    # train subset is drawn ONLY from train.npz (never val/test) — the held-out splits are
+    # train subset is drawn ONLY from train.npz (never val/test) - the held-out splits are
     # untouched here; LR selection happens against val in src/train/finetune_study.py.
     imgs, labels = load_train_subset(fraction, seed, max_n)
     print(f"[ft] {len(imgs)} train images, lr={lr}, epochs={epochs}, seed={seed}", flush=True)

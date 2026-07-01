@@ -5,7 +5,7 @@ Only get_fast_aji, get_fast_aji_plus, and remap_label are vendored here, verbati
 cv2/matplotlib imports dropped (AJI needs neither). Commit pinned in third_party/SOURCES.md.
 
 AJI+ uses Hungarian 1-to-1 pairing (preferred); classic AJI uses greedy 1-to-many and
-over-penalises — kept only for reference. Always remap_label() to contiguous IDs first.
+over-penalises - kept only for reference. Always remap_label() to contiguous IDs first.
 """
 import numpy as np
 from scipy.optimize import linear_sum_assignment

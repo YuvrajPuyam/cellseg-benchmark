@@ -7,7 +7,7 @@ very slow on dense tissue (100s of cells/image → ~80 s/image). The fast AJI is
 identical to the vendored HoVer-Net version (cross-checked in tests against third_party/).
 
 Averaging convention (pinned, stated in the README):
-  * per-image (macro) is the HEADLINE — mean over images of each per-image metric.
+  * per-image (macro) is the HEADLINE - mean over images of each per-image metric.
   * dataset-pooled F1/PQ also reported via stardist.matching_dataset(by_image=False).
 Empty-GT images are skipped by default. Masks are integer instance labels (0 = background).
 """
@@ -49,8 +49,8 @@ def paired_bootstrap_delta_ci(values_a, values_b, n_boot: int = N_BOOTSTRAP, see
     """Paired bootstrap 95% CI for the mean per-image difference ``a - b`` (e.g. fine-tune lift).
 
     ``values_a`` and ``values_b`` are aligned per-image metric arrays (same image order, same
-    length). Resampling shares the image index across both models so the pairing — and thus the
-    correlation between models on the same image — is preserved. Returns
+    length). Resampling shares the image index across both models so the pairing - and thus the
+    correlation between models on the same image - is preserved. Returns
     ``(mean_delta, lo, hi)``; a CI excluding 0 indicates a significant difference at ``alpha``.
     """
     a = np.asarray(values_a, dtype=np.float64)

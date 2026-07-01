@@ -1,4 +1,4 @@
-# Fine-tuning study — Cellpose-SAM, whole-cell (TissueNet test, N=300)
+# Fine-tuning study - Cellpose-SAM, whole-cell (TissueNet test, N=300)
 
 Fine-tuned on a 200-image TissueNet train subset, 20 epochs. Delta vs zero-shot.
 

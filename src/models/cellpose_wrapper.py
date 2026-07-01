@@ -1,4 +1,4 @@
-"""Cellpose-SAM (cpsam) wrapper — env: torch-cell. Handles whole-cell and nuclear.
+"""Cellpose-SAM (cpsam) wrapper - env: torch-cell. Handles whole-cell and nuclear.
 
 cellpose 4.x ships the cpsam checkpoint; no `channels=` arg (auto-uses up to 3 channels,
 order-invariant) and eval() returns a 3-tuple. cpsam normalizes internally (normalize=True).

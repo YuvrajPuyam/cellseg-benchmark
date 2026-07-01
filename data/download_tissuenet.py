@@ -27,7 +27,7 @@ VERSIONS = {
     "1.1": {"asset_key": "data/tissuenet/tissuenet_v1-1.zip", "md5": "cab3b8f242aaee02035557b93546d9dc"},
     "1.0": {"asset_key": "data/tissuenet/tissuenet_1-0.zip", "md5": "f080c7732dd6de71e8e72e95a314e904"},
 }
-# Public, no-token single-image sample — handy for unit-test fixtures + local loader dev.
+# Public, no-token single-image sample - handy for unit-test fixtures + local loader dev.
 SAMPLE_URL = "https://deepcell-data.s3.us-west-1.amazonaws.com/multiplex/tissuenet-sample.npz"
 
 

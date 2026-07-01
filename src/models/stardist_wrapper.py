@@ -1,4 +1,4 @@
-"""StarDist 2D_versatile_fluo wrapper — env: stardist-tf. Nuclear task only.
+"""StarDist 2D_versatile_fluo wrapper - env: stardist-tf. Nuclear task only.
 
 StarDist's star-convex prior collapses to near-circles on whole-cell, so it competes only on
 the nuclear channel (fair-comparison decision). Uses csbdeep percentile normalization, the

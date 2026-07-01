@@ -1,172 +1,114 @@
-# cajal — Cell/Tissue Segmentation Foundation-Model Benchmark
+# cajal
 
-> Codename **cajal**, after Santiago Ramón y Cajal, who hand-segmented cells from stained
-> tissue under a microscope. Sister project to `laplace`.
+**Which cell-segmentation foundation model works best on multiplexed tissue, and how much does fine-tuning help?**
 
-A reproducible benchmark answering *"which segmentation foundation model — Cellpose-SAM,
-μSAM, or StarDist — works on my multiplexed tissue, and how much does fine-tuning buy?"*
+A reproducible benchmark of three pretrained segmentation models (Cellpose-SAM, μSAM, StarDist)
+on TissueNet, run end to end on Purdue's Gilbreth HPC cluster, with correct instance-level metrics,
+confidence intervals, honest failure analysis, and a measured fine-tuning gain.
 
-> **Status:** scaffold + cluster wiring. SSH access to Gilbreth is verified. Version pins in
-> `envs/*.yml` are best-effort and **must be validated on Gilbreth** (see "Known unvalidated").
-
-## Gilbreth coordinates (verified 2026-06-29)
-
-```
-HOST   = gilbreth.rcac.purdue.edu        # key-based via ~/.ssh/config (gupta596), bypasses Duo
-REPO   = /scratch/gilbreth/gupta596/MotionGen/HOI/cajal   # cluster home; keep all work under here
-ACCT   = csml        PARTITION = a30     # csml has A30 only (24 GB, 24 cpu/node); no A100/H100
-SCRATCH= /scratch/gilbreth/gupta596      # $RCAC_SCRATCH; 2.1 TB used of 200 TB
-```
-
-Cold-start runbook for a fresh session: see [`CLAUDE.md`](CLAUDE.md).
-
-## What this is
-
-Three pretrained segmenters run through one uniform eval path on **TissueNet** (multiplexed
-tissue), scored with instance-level metrics (AJI/AJI+, PQ, F1@IoU{0.5,0.75}, boundary-F1, Dice),
-with touching-cell failure visualizations, then one model is fine-tuned and the lift over
-zero-shot is reported.
-
-Two tasks, because StarDist's star-convex prior collapses to near-circles on whole-cell:
-- **Whole-cell:** Cellpose-SAM, μSAM
-- **Nuclear:** StarDist, Cellpose-SAM, μSAM
+> Named after Santiago Ramón y Cajal, who hand-drew and segmented cells from stained tissue under a microscope.
 
 ## Results
 
-> TissueNet v1.1 **test** split, N=300 images (256×256), per-image (macro) averaging,
-> empty-GT images skipped. Full auto-generated tables: [`results/benchmark_tables.md`](results/benchmark_tables.md).
-> Metrics: AJI+ (Hungarian 1-to-1), PQ, F1@IoU, boundary-F1 (NSD, 2 px), Dice.
+TissueNet v1.1 test split, per-image (macro) averaging, bootstrap 95% confidence intervals.
+Higher is better; **bold** is best in column.
 
-<!--RESULTS-->
-(higher is better; **bold** = best in column; `±` = bootstrap 95% CI half-width)
+### Whole-cell
 
-**Whole-cell task** (N=297)
-
-| model | F1@0.5 | F1@0.75 | AJI+ | PQ | boundary-F1 | Dice |
-|---|---|---|---|---|---|---|
-| Cellpose-SAM | **0.844 ±.013** | **0.591 ±.024** | **0.718 ±.012** | **0.670 ±.014** | **0.869 ±.014** | **0.902 ±.010** |
-| μSAM | 0.736 ±.018 | 0.412 ±.020 | 0.597 ±.015 | 0.553 ±.015 | 0.740 ±.020 | 0.808 ±.015 |
-
-**Nuclear task** (N=297; StarDist N=148)
-
-| model | F1@0.5 | F1@0.75 | AJI+ | PQ | boundary-F1 | Dice |
-|---|---|---|---|---|---|---|
-| Cellpose-SAM | **0.841 ±.017** | 0.530 ±.026 | **0.710 ±.014** | **0.651 ±.015** | 0.895 ±.014 | 0.871 ±.011 |
-| μSAM | 0.810 ±.015 | **0.601 ±.019** | 0.702 ±.012 | 0.648 ±.013 | **0.907 ±.008** | **0.892 ±.006** |
-| StarDist (2D_versatile_fluo) | 0.766 ±.023 | 0.464 ±.025 | 0.633 ±.017 | 0.585 ±.020 | 0.848 ±.014 | 0.844 ±.012 |
-
-**Read:** Cellpose-SAM is the most robust across both tasks, and its whole-cell lead over μSAM
-(0.844 vs 0.736) far exceeds the CIs — a real, significant gap. On **nuclei** the three are
-closer: μSAM even wins the stricter F1@0.75 and boundary-F1 (tighter contours), and StarDist —
-a much smaller, nuclei-specialist model — is a respectable 0.766. The earlier μSAM whole-cell
-"collapse" (0.51) was a **harness artifact** of a channel-mean grayscale input; the corrected
-RGB=[membrane, nuclear, membrane] input recovers it to 0.736, so μSAM is competitive, not broken.
-
-**Fine-tuning Cellpose-SAM (whole-cell, 200-image subset, 20 epochs):**
-
-| model | F1@0.5 | AJI+ | PQ | boundary-F1 | Dice |
+| model | F1@0.5 | F1@0.75 | AJI+ | boundary-F1 | Dice |
 |---|---|---|---|---|---|
-| zero-shot | 0.844 | 0.718 | 0.670 | 0.869 | 0.902 |
-| fine-tuned (lr 1e-5) | **0.859** | **0.732** | **0.688** | **0.885** | **0.915** |
-| fine-tuned (lr 5e-5) | 0.843 | 0.715 | 0.671 | 0.869 | 0.905 |
+| **Cellpose-SAM** | **0.844 ±.013** | **0.591** | **0.718** | **0.869** | **0.902** |
+| μSAM | 0.736 ±.018 | 0.412 | 0.597 | 0.740 | 0.808 |
 
-**Fine-tuning lifted whole-cell F1@0.5 by +0.015 (AJI+ +0.014, PQ +0.018, boundary-F1 +0.016)**
-at lr 1e-5; lr 5e-5 was too high (≈flat). Full numbers: [`results/finetune_delta.md`](results/finetune_delta.md).
-<!--/RESULTS-->
+### Nuclear
 
-**Fine-tuning study (whole-cell):** Cellpose-SAM fine-tuned on a 200-image TissueNet subset,
-LR sweep {1e-5, 5e-5}, 20 epochs — zero-shot vs fine-tuned delta reported in
-[`results/finetune_delta.md`](results/finetune_delta.md).
+| model | F1@0.5 | F1@0.75 | AJI+ | boundary-F1 | Dice |
+|---|---|---|---|---|---|
+| **Cellpose-SAM** | **0.841 ±.017** | 0.530 | **0.710** | 0.895 | 0.871 |
+| μSAM | 0.810 ±.015 | **0.601** | 0.702 | **0.907** | **0.892** |
+| StarDist | 0.766 ±.023 | 0.464 | 0.633 | 0.848 | 0.844 |
 
-## Architecture
+**Read it this way.** Cellpose-SAM is the most reliable out-of-the-box choice, and its whole-cell
+lead over μSAM (0.844 vs 0.736) is far larger than the confidence intervals, so it is a real
+difference. On nuclei the three models are close: μSAM draws the tightest boundaries, and StarDist
+is a solid lightweight specialist (StarDist runs at N=148; see Limitations).
 
-TensorFlow (StarDist) and PyTorch (Cellpose-SAM, μSAM) pin conflicting CUDA/cuDNN stacks, so
-they **cannot share a GPU env**. The harness is a thin orchestrator over subprocesses, each in
-its own pinned conda env, handing off integer-label masks on disk (`.tif`/`.npy`):
+### Fine-tuning Cellpose-SAM (whole-cell)
 
+Fine-tuning on TissueNet's own labels raises whole-cell F1@0.5 from **0.844** (zero-shot) to
+**0.859** with 200 images (+1.5 pts) and **0.865** with the full 2,580-image set (**+2.1 pts**).
+More labeled data buys more accuracy.
+
+### A finding worth highlighting
+
+μSAM first scored 0.51 on whole cells. The cause was not the model but the input: averaging the two
+image channels into grayscale erased the cell-membrane edges the model relies on. Feeding it an RGB
+image of `[membrane, nuclear, membrane]` recovered it to 0.74. Input adaptation can matter as much as
+model choice when applying RGB-pretrained foundation models to multiplexed data.
+
+![Nuclear segmentation overlays](results/figures/nuclear_test_img2.png)
+
+*Nuclear task: the raw image, then cell outlines from ground truth (green) and each model (magenta).
+A pitch sheet with more examples is in [`results/showcase.html`](results/showcase.html).*
+
+## Why the numbers can be trusted
+
+- **AJI+** reimplemented as an O(image) contingency table, unit-tested to be numerically identical to
+  the reference HoVer-Net implementation and about 28x faster on dense tissue.
+- Hungarian 1-to-1 instance matching, per-image averaging stated explicitly, bootstrap 95% confidence
+  intervals on every metric, and a paired-bootstrap test for the fine-tuning delta.
+- One-command reproducible: pinned conda environments, seeded runs, scripted cluster jobs, unit tests.
+
+## Honest limitations
+
+- **StarDist** runs on a smaller sample (N=148). Its TensorFlow build crashes beyond that on this
+  cluster, on both GPU and CPU, so treat its row as approximate.
+- The **+2.1 full-data fine-tune** number is a single short run: a solid signal, not yet with error bars.
+- Everything is measured on **TissueNet**, so it is an honest answer for TissueNet-like tissue.
+- These are off-the-shelf models. This is a rigorous, reproducible comparison, not a new architecture.
+
+## Reproduce
+
+Full cluster recipe (environment build, weight pre-caching, scoring) is in [`CLAUDE.md`](CLAUDE.md). In short:
+
+```bash
+export DEEPCELL_ACCESS_TOKEN=...              # free token from users.deepcell.org
+python data/download_tissuenet.py             # download + md5-verify + extract TissueNet v1.1
+bash scripts/gilbreth/build_envs.sh           # + build_envs2.sh: three pinned conda envs
+# inference (one model/task per Slurm job; weights pre-cached for offline compute nodes):
+sbatch --export=ALL,ENV=torch-cell,MODEL=cellpose,TASK=wholecell,SAMPLE=300 slurm/benchmark.sbatch
+# score every mask, build the tables (with CIs) and figures:
+sbatch slurm/finalize.sbatch
+# fine-tune with a validation-selected learning rate:
+sbatch --export=ALL,LR=1e-5,EPOCHS=20,MAXN=200 slurm/finetune.sbatch
+python -m src.viz.build_showcase              # -> results/showcase.html
 ```
-orchestrator (src/eval/run_benchmark.py)
-  ├─ env torch-cell    → cellpose 4.x (cpsam) + micro_sam (vit_*_lm)   [PyTorch]
-  ├─ env stardist-tf   → stardist + TF2 + csbdeep                       [TensorFlow]
-  └─ env metrics       → numpy/scipy/scikit-image/stardist/monai        (framework-agnostic scoring)
-```
+
+Metrics are unit-tested locally with no GPU or dataset needed: `python tests/test_metrics.py`.
 
 ## Repo layout
 
 ```
-envs/        torch-cell.yml · stardist-tf.yml · metrics.yml   (pinned, validate on cluster)
-configs/     run + model config (paths, thresholds, seed)
-data/        download_tissuenet.py (token check) · loader.py (NORMALIZES)
-src/models/  base.py contract + cellpose/microsam/stardist wrappers
-src/eval/    metrics.py (AJI vendored) · run_benchmark.py (subprocess orchestrator)
-src/train/   finetune.py
-src/viz/     plots.py (GT-vs-pred overlays, touching-cell crops)
-third_party/ vendored HoVer-Net AJI/AJI+ (pinned by commit SHA)
-slurm/       benchmark.sbatch · finetune.sbatch
-tests/       synthetic-fixture unit tests (loader normalization, metrics golden set)
-results/     committed tables (csv/md) + figures (png)
+data/         download_tissuenet.py, loader.py (percentile normalization + seeded sampling)
+src/models/   cellpose / microsam / stardist wrappers (one segment() contract)
+src/eval/     metrics.py (AJI+/PQ/F1/boundary-F1/Dice + bootstrap CIs), run_benchmark.py
+src/train/    finetune.py, finetune_study.py (val-based LR selection)
+src/viz/      plots.py (overlays), build_showcase.py / build_dashboard.py (HTML)
+third_party/  vendored HoVer-Net AJI (pinned commit)
+slurm/        Slurm job scripts;  scripts/gilbreth/  cluster helpers
+tests/        unit tests for metrics + loader
+results/      committed tables, figures, and HTML report sheets
 ```
 
-## Quickstart (validated end-to-end on Gilbreth)
+## Reports
 
-Full working recipe (env build, weight pre-caching, scoring, figures, fine-tune) is in
-[`CLAUDE.md`](CLAUDE.md). In short:
+- [`REPORT.md`](REPORT.md): a plain-English summary of the study and findings.
+- [`results/showcase.html`](results/showcase.html): one self-contained page, results plus example pictures.
+- [`results/benchmark_tables.md`](results/benchmark_tables.md) and
+  [`results/finetune_delta.md`](results/finetune_delta.md): the raw numbers.
 
-```bash
-export DEEPCELL_ACCESS_TOKEN=...                 # from users.deepcell.org (see .env)
-python data/download_tissuenet.py                # download + md5-verify + extract v1.1
-bash scripts/gilbreth/build_envs.sh              # + build_envs2.sh: the 3 conda envs
-# zero-shot inference (one model/task per job; weights pre-cached on the login node):
-sbatch --export=ALL,ENV=torch-cell,MODEL=cellpose,TASK=wholecell,LIMIT=300 slurm/benchmark.sbatch
-# stardist runs CPU-side (its GPU TF build segfaults on this driver):
-#   CUDA_VISIBLE_DEVICES="" python -m src.eval.run_benchmark infer --model stardist --task nuclear
-# score + tables + figures + fine-tune delta, all in one scheduler job:
-sbatch slurm/finalize.sbatch                     # -> results/benchmark_tables.md, finetune_delta.md
-sbatch --export=ALL,LR=1e-5,EPOCHS=20,MAXN=200 slurm/finetune.sbatch
-```
+## License and data
 
-## Known unvalidated (resolve at build time on cluster)
-
-- Exact `cellpose` / `stardist` / `monai` / `micro_sam` versions at lock.
-- μSAM's effective torch pin (docs say 2.1.1–2.2.0; `master` wants ≥2.5) — must co-import
-  cleanly with cellpose in `torch-cell`, else split into a third subprocess env.
-- Whether `csml` exposes a free `standby`-style QOS for inference (check `slist`/`myquota`).
-- Anaconda + cuda/cudnn module versions on Gilbreth (`module spider`).
-- TissueNet license text + µm/px.
-
-## Limitations (honest scope)
-
-- **Evaluation subset:** N=300 test images (of ~1324) for a fast, fair head-to-head — same images
-  across all models. Easy to scale to the full split (drop `--limit`); the headline ranking is stable.
-- **One fine-tuned model, small sweep:** Cellpose-SAM on a 200-image subset, LR {1e-5, 5e-5}, 20
-  epochs — a recipe + measured lift, not an exhaustive hyperparameter search.
-- **AJI compute cost:** the vendored HoVer-Net AJI is O(cells × image) per pair; dense tissue
-  (100s of cells/image) makes scoring the slow step, not inference.
-- **μSAM whole-cell input:** uses a channel-mean grayscale → μSAM collapses on whole-cell (0.51 F1).
-  A learned 2-channel fusion would likely recover most of that gap; the nuclear result (0.81) shows
-  the model itself is strong.
-- **StarDist omitted:** the pretrained `2D_versatile_fluo` build crashes (`Aborted, core dumped`) on
-  this cluster's TF 2.15 stack — on **both** GPU (after ~275 imgs) and CPU. A documented
-  reproducibility limitation, not a property of StarDist; nuclear is still a fair 2-model comparison.
-- **Not chasing SOTA:** the deliverable is the rigorous, reproducible comparison + failure analysis.
-
-### Hardened in code (a rigor pass — numbers update on the next cluster run)
-
-The methodology weaknesses above are now addressed in the eval engine; the reported numbers refresh
-once the pipeline is re-run on Gilbreth:
-- **Seeded random subset** — `run_benchmark infer --sample N --seed S` replaces the biased first-N
-  `--limit` (`data.loader.sample_indices`).
-- **Variance + significance** — every metric now carries a percentile **bootstrap 95% CI**
-  (`metrics.bootstrap_ci`); `report` renders `mean ±ci`. The fine-tune lift gets a **paired** bootstrap
-  CI (`metrics.paired_bootstrap_delta_ci`) — a CI excluding 0 means a significant lift.
-- **Fair μSAM whole-cell** — input is now RGB `[membrane, nuclear, membrane]` (was channel-mean),
-  preserving the boundary signal μSAM needs.
-- **No LR-on-test** — `src/train/finetune_study.py` selects the LR on **val**, then reports **test**
-  across ≥3 seeds (`finetune.py` now seeds torch/CUDA so seeds actually differ).
-- **Interactive dashboard** — `python -m src.viz.build_dashboard` → a standalone `results/dashboard.html`
-  (sortable tables, metric bars, base64 failure-case gallery).
-
-## License notes
-
-- Cellpose `cpsam` weights are **CC-BY-NC** — research/portfolio use only, not commercial.
-- TissueNet is **non-commercial academic** — not redistributed in this repo.
+- Cellpose `cpsam` weights are **CC-BY-NC** (research use, not commercial).
+- **TissueNet** is non-commercial academic. The raw dataset is not redistributed here; only a few small
+  example overlays are shown for illustration.

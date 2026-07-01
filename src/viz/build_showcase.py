@@ -1,4 +1,4 @@
-"""Build results/showcase.html — a self-contained page with the updated benchmark results and a
+"""Build results/showcase.html - a self-contained page with the updated benchmark results and a
 gallery of segmentation overlays (base64-inlined so the file opens standalone in any browser).
 
 Run: python -m src.viz.build_showcase
@@ -16,9 +16,9 @@ OUT = ROOT / "results" / "showcase.html"
 # Figures to feature: (task, image index, caption). Files: {task}_test_img{idx}.png
 GALLERY = [
     ("wholecell", 8, "Whole-cell segmentation"),
-    ("wholecell", 14, "Whole-cell — a denser field"),
+    ("wholecell", 14, "Whole-cell - a denser field"),
     ("nuclear", 2, "Nuclear segmentation"),
-    ("nuclear", 8, "Nuclear — larger, sparser nuclei"),
+    ("nuclear", 8, "Nuclear - larger, sparser nuclei"),
 ]
 
 WHOLECELL = [  # model, F1@0.5(+ci), F1@0.75, AJI+, PQ, boundaryF1, Dice, best-flags
@@ -56,7 +56,7 @@ def main():
     imgs = "".join(
         f'<figure class="shot"><img alt="{cap}" src="data:image/png;base64,{d}"><figcaption>{cap}</figcaption></figure>'
         for (task, idx, cap) in GALLERY if (d := b64(task, idx))
-    ) or "<p><em>No figures found — run <code>python -m src.viz.plots</code> first.</em></p>"
+    ) or "<p><em>No figures found - run <code>python -m src.viz.plots</code> first.</em></p>"
 
     wc = "".join(wc_row(r) for r in WHOLECELL)
     nuc = "".join(
@@ -66,7 +66,7 @@ def main():
 
     html = f"""<!DOCTYPE html><html lang="en"><head><meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>cajal — cell-segmentation benchmark</title>
+<title>cajal - cell-segmentation benchmark</title>
 <style>
 :root{{--ink:#1b1b1a;--muted:#6c6c66;--line:#e6e6e0;--teal:#1D9E75;--coral:#D85A30;--blue:#378ADD;--bg:#fbfbf8;--card:#fff;}}
 *{{box-sizing:border-box}}body{{margin:0;background:var(--bg);color:var(--ink);font:15px/1.65 -apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Helvetica,Arial,sans-serif}}
@@ -83,7 +83,7 @@ td.best{{font-weight:700;color:#0f4f3a}}td.model{{font-weight:600}}
 ul{{margin:6px 0 0;padding-left:20px}}li{{margin:4px 0}}.caveat li{{color:#7a5b2e}}
 .foot{{margin-top:22px;padding-top:13px;border-top:1px solid var(--line);color:var(--muted);font-size:12px}}
 </style></head><body><div class="wrap">
-<h1>cajal — which model best outlines cells in multiplexed tissue?</h1>
+<h1>cajal - which model best outlines cells in multiplexed tissue?</h1>
 <p class="one">A reproducible benchmark of Cellpose-SAM, μSAM &amp; StarDist on TissueNet, with a measured fine-tuning gain.</p>
 <p class="meta">TissueNet v1.1 · test split · N=297 (StarDist 148) · per-image macro · bootstrap 95% CIs · Gilbreth A30/A10 · higher is better, <b>bold</b> = best in column</p>
 
@@ -95,7 +95,7 @@ ul{{margin:6px 0 0;padding-left:20px}}li{{margin:4px 0}}.caveat li{{color:#7a5b2
 
 <h2>Fine-tuning Cellpose-SAM (whole-cell)</h2>
 <div class="lift">Fine-tuning on labeled TissueNet images lifts whole-cell F1@0.5 from <b>0.844</b> (zero-shot)
-to <b>0.859</b> with 200 images (+1.5 pts) and <b>0.865</b> with the full 2,580-image set (<b>+2.1 pts</b>) —
+to <b>0.859</b> with 200 images (+1.5 pts) and <b>0.865</b> with the full 2,580-image set (<b>+2.1 pts</b>) -
 more data, more gain.</div>
 
 <h2>Segmentation examples</h2>
@@ -107,9 +107,9 @@ touching cells = the model merged them; extra lines = it over-split.</p>
 
 <h2>Honest limits</h2>
 <ul class="caveat">
-<li>StarDist ran on a smaller sample (N=148) — its TF build crashes beyond that on this cluster; treat as approximate.</li>
-<li>The full-data fine-tune (+2.1) is a single short run — a solid signal, not yet with error bars.</li>
-<li>All measured on TissueNet — an honest answer for TissueNet-like tissue.</li>
+<li>StarDist ran on a smaller sample (N=148) - its TF build crashes beyond that on this cluster; treat as approximate.</li>
+<li>The full-data fine-tune (+2.1) is a single short run - a solid signal, not yet with error bars.</li>
+<li>All measured on TissueNet - an honest answer for TissueNet-like tissue.</li>
 </ul>
 
 <div class="foot">AJI+ verified identical to HoVer-Net · Hungarian 1-to-1 matching · boundary-F1 = normalized surface dice (2px) · one-command reproducible · unit-tested metrics.</div>

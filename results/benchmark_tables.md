@@ -20,4 +20,4 @@ TF build core-dumps on this cluster); Cellpose-SAM and μSAM at N=297.
 | stardist | 0.633 ±0.017 | 0.596 ±0.017 | 0.585 ±0.020 | 0.766 ±0.023 | 0.464 ±0.025 | 0.848 ±0.014 | 0.844 ±0.012 | 148 |
 
 _Note: μSAM whole-cell uses the corrected RGB=[membrane, nuclear, membrane] input (the earlier
-channel-mean grayscale gave 0.512 — a harness strawman, now 0.736)._
+channel-mean grayscale gave 0.512 - a harness strawman, now 0.736)._

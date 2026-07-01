@@ -1,4 +1,4 @@
-"""Unit tests for data.loader — runnable with pytest or `python tests/test_loader.py`.
+"""Unit tests for data.loader - runnable with pytest or `python tests/test_loader.py`.
 
 Uses synthetic arrays so it needs neither the gated dataset nor a GPU. Channel conventions
 are pinned against TissueNet v1.1 metadata.yaml: X=[nuclear, whole-cell], y=[whole-cell, nuclear].

@@ -1,4 +1,4 @@
-"""Metrics tests — fast AJI must equal the vendored HoVer-Net reference, and remap must be
+"""Metrics tests - fast AJI must equal the vendored HoVer-Net reference, and remap must be
 robust to fully-covered masks. Runnable with numpy/scipy (no GPU/stardist needed for these)."""
 import sys
 from pathlib import Path
@@ -39,7 +39,7 @@ def test_fast_aji_matches_vendored():
 
 
 def test_remap_handles_no_background():
-    m = np.ones((16, 16), np.int32)         # fully covered, no 0 — HoVer-Net's remove(0) would crash
+    m = np.ones((16, 16), np.int32)         # fully covered, no 0 - HoVer-Net's remove(0) would crash
     out = remap_label(m)
     assert out.min() == 1 and out.max() == 1
 

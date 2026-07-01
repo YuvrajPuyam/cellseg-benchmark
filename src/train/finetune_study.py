@@ -1,10 +1,10 @@
-"""Rigorous fine-tune LR study — select the LR on VAL, then report the lift on TEST.
+"""Rigorous fine-tune LR study - select the LR on VAL, then report the lift on TEST.
 
 Why this file exists
 --------------------
 The previous fine-tune workflow (``scripts/gilbreth/eval_finetune.sh``) fine-tuned at several
 learning rates and then compared every checkpoint *directly on the test split*, reporting the
-best one. That selects the LR on the test set — the reported test lift is optimistically biased
+best one. That selects the LR on the test set - the reported test lift is optimistically biased
 (you peeked at the test set to choose a hyper-parameter). This driver removes that leak:
 
     1.  SWEEP   : for each LR in --lrs, fine-tune on the TRAIN subset (one seed) and evaluate
@@ -28,7 +28,7 @@ The fine-tune step needs the GPU env (torch-cell) and the score step needs the m
 in production these run as separate cluster jobs. This driver is the single-env reference
 orchestration (e.g. an interactive GPU node with both stardist excluded); the exact commands it
 issues are printed (and logged) so they can also be lifted into sbatch scripts. Nothing here is
-specific to the local machine — it only assembles + runs argv lists.
+specific to the local machine - it only assembles + runs argv lists.
 """
 from __future__ import annotations
 
@@ -201,7 +201,7 @@ def main():
     else:
         finite = [s for s in sweep if math.isfinite(s[1])]
         if not finite:
-            raise SystemExit("[study] no finite val scores — cannot select an LR")
+            raise SystemExit("[study] no finite val scores - cannot select an LR")
         best_lr, best_val, _, _ = max(finite, key=lambda s: s[1])
         print(f"[study] === SELECTED LR={best_lr} (val {args.metric}={best_val:.4f}) ===", flush=True)
 
@@ -236,7 +236,7 @@ def _write_report(args, lrs, seeds, sweep, best_lr, test_scores, test_aggs,
     metric = args.metric
 
     def f(x):
-        return "—" if x is None or not math.isfinite(x) else f"{x:.4f}"
+        return "-" if x is None or not math.isfinite(x) else f"{x:.4f}"
 
     L = ["# Fine-tune LR study (val-selected, test-reported)\n",
          "_LR is chosen on the **val** split; the **test** split is used only to report the "

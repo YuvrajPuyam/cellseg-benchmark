@@ -3,12 +3,12 @@
 Generates ``results/dashboard.html`` from the artifacts produced by the eval /
 fine-tuning / figure stages. The dashboard has three views:
 
-1. Model comparison — the whole-cell and nuclear metric tables, rendered as a
+1. Model comparison - the whole-cell and nuclear metric tables, rendered as a
    sortable table plus horizontal metric bars. Parses ``benchmark_tables.md``
    (or the ``*_agg.json`` files if present).
-2. Fine-tuning lift — parses ``finetune_delta.md`` (and ``finetune_study.md`` if
+2. Fine-tuning lift - parses ``finetune_delta.md`` (and ``finetune_study.md`` if
    present).
-3. Failure-case gallery — every ``results/figures/*.png`` embedded base64-INLINE
+3. Failure-case gallery - every ``results/figures/*.png`` embedded base64-INLINE
    so the HTML is fully standalone, captioned with its task + image index and
    filterable (whole-cell / nuclear).
 

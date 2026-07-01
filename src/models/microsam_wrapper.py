@@ -1,4 +1,4 @@
-"""micro_sam (μSAM) wrapper — env: torch-cell. vit_b_lm (light-microscopy). Whole-cell + nuclear.
+"""micro_sam (μSAM) wrapper - env: torch-cell. vit_b_lm (light-microscopy). Whole-cell + nuclear.
 
 Optional model: if micro_sam fails to import, the orchestrator skips it (it's an extra PyTorch
 package that can be awkward to install). Inputs are percentile-normalized to [0,1] float32, which
@@ -42,7 +42,7 @@ def segment(raw_image, task="wholecell"):
         # channel: RGB = [membrane, nuclear, membrane]. This keeps membrane dominant (2 of 3
         # channels) while still giving the nuclear interior signal, matching how the _lm model
         # was trained on multi-channel light-microscopy data. Each channel is independently
-        # percentile-normalized to [0, 1] float32 — the dtype/range micro_sam's automatic
+        # percentile-normalized to [0, 1] float32 - the dtype/range micro_sam's automatic
         # instance segmentation expects (it normalizes/upsamples internally from there).
         norm = normalize_image(img)                           # (H,W,2) per-channel → [0,1]
         nuclear, membrane = norm[..., 0], norm[..., 1]

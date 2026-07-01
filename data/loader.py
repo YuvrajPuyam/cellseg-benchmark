@@ -1,12 +1,12 @@
 """TissueNet loader + normalization.
 
-TissueNet is **not** pre-normalized — pixels are raw intensity (the sample's nuclear channel
-ranges ~0.4–27). This loader applies per-image, per-channel percentile normalization (the #1
+TissueNet is **not** pre-normalized - pixels are raw intensity (the sample's nuclear channel
+ranges ~0.4-27). This loader applies per-image, per-channel percentile normalization (the #1
 silent-failure footgun in cell-seg benchmarks) before any model sees an image.
 
 Data layout (TissueNet v1.1, extracted from tissuenet_v1-1.zip):
-  X: (N, 512, 512, 2) float  — channel 0 = nuclear, channel 1 = membrane / whole-cell marker
-  y: (N, 512, 512, 2) int    — channel 0 = whole-cell labels, channel 1 = nuclear labels
+  X: (N, 512, 512, 2) float  - channel 0 = nuclear, channel 1 = membrane / whole-cell marker
+  y: (N, 512, 512, 2) int    - channel 0 = whole-cell labels, channel 1 = nuclear labels
 The public single-image sample (tissuenet-sample.npz) carries y of shape (1, 512, 512, 1).
 """
 from __future__ import annotations
@@ -72,7 +72,7 @@ def sample_indices(n_total: int, n: int, seed: int) -> np.ndarray:
     """Deterministic-random subset of ``n`` image indices from ``range(n_total)``.
 
     Uses ``np.random.default_rng(seed)`` so a (n_total, n, seed) triple always selects the same
-    images — the seeded counterpart to a first-N ``--limit``. Returned indices are sorted so the
+    images - the seeded counterpart to a first-N ``--limit``. Returned indices are sorted so the
     yielded order still matches on-disk order. If ``n >= n_total`` (or ``n <= 0``) all indices are
     returned (sampling without replacement can't exceed the population).
     """
