@@ -6,9 +6,9 @@
 # Switches between the torch-cell (train/infer) and metrics (score) conda envs. Run via
 # slurm/finetune_full.sbatch; poll cajal-fullft-<jobid>.out.
 set -o pipefail
-R=/scratch/gilbreth/gupta596/MotionGen/HOI/cajal; cd "$R"
+R=/scratch/gilbreth/$USER/cellseg-benchmark; cd "$R"
 CONDA=/apps/external/anaconda/2025.06/etc/profile.d/conda.sh
-SCRATCH=/scratch/gilbreth/gupta596
+SCRATCH=/scratch/gilbreth/$USER
 LRS="1e-5 3e-5"
 SWEEP_EPOCHS=6
 FINAL_EPOCHS=12   # full 2580-img data → ~8x the gradient exposure of the 200-img run; also fits the

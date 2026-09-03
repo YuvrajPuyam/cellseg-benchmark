@@ -1,12 +1,10 @@
-# cajal
+# cellseg-benchmark
 
 **Which cell-segmentation foundation model works best on multiplexed tissue, and how much does fine-tuning help?**
 
 A reproducible benchmark of three pretrained segmentation models (Cellpose-SAM, μSAM, StarDist)
 on TissueNet, run end to end on Purdue's Gilbreth HPC cluster, with correct instance-level metrics,
 confidence intervals, honest failure analysis, and a measured fine-tuning gain.
-
-> Named after Santiago Ramón y Cajal, who hand-drew and segmented cells from stained tissue under a microscope.
 
 ## Results
 

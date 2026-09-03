@@ -10,10 +10,10 @@
 #SBATCH --output=%x-%j.out
 set -euo pipefail
 
-REPO=/scratch/gilbreth/gupta596/MotionGen/HOI/cajal
+REPO=/scratch/gilbreth/$USER/cellseg-benchmark
 cd "$REPO"
 source /apps/external/anaconda/2025.06/etc/profile.d/conda.sh
-conda activate "/scratch/gilbreth/gupta596/envs/${ENV:-torch-cell}"   # stardist-tf for stardist
+conda activate "/scratch/gilbreth/$USER/envs/${ENV:-torch-cell}"   # stardist-tf for stardist
 
 echo "=== node $(hostname) ==="
 nvidia-smi --query-gpu=name,memory.total --format=csv,noheader

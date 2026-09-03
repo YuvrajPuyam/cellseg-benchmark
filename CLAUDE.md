@@ -1,4 +1,4 @@
-# cajal - cold-start runbook for Gilbreth
+# cellseg-benchmark - cold-start runbook for Gilbreth
 
 Sister project to `laplace`. Everything a fresh session needs to operate the cell/tissue
 segmentation benchmark on Purdue's Gilbreth cluster. Copy-pasteable. Paths are hard-coded.
@@ -8,14 +8,14 @@ segmentation benchmark on Purdue's Gilbreth cluster. Copy-pasteable. Paths are h
 ## 0. The one fact block
 
 ```
-HOST   = gilbreth.rcac.purdue.edu        # ~/.ssh/config resolves to gupta596, key-based, bypasses Duo
-REPO   = /scratch/gilbreth/gupta596/MotionGen/HOI/cajal      # ALL work stays under here (containment)
+HOST   = gilbreth.rcac.purdue.edu        # set up in ~/.ssh/config for non-interactive access
+REPO   = /scratch/gilbreth/$USER/cellseg-benchmark      # ALL work stays under here (containment)
 ACCT   = csml        PARTITION = a30     # csml has A30 ONLY (24 GB, 24 cpu/node); no A100/H100
-SCRATCH= /scratch/gilbreth/gupta596      # $RCAC_SCRATCH; home is 25 GB so keep data/envs in scratch
+SCRATCH= /scratch/gilbreth/$USER      # $RCAC_SCRATCH; home is 25 GB so keep data/envs in scratch
 ```
 
 Containment: only write under `REPO`. Never `$HOME`, never `HOI/laplace`, never other scratch.
-`cajal` is a sibling of `HOI/laplace` - a separate project, not laplace work.
+`cellseg-benchmark` is a sibling of `HOI/laplace` - a separate project, not laplace work.
 
 ## 1. SSH (non-interactive, key-based)
 
@@ -29,7 +29,7 @@ Never hold an interactive session. Submit detached via `sbatch`, poll with short
 
 ## 2. Day-0 status (what's done / what's blocked)
 
-- [x] SSH access verified (2026-06-29): logs in as `gupta596`, scratch has room.
+- [x] SSH access verified (2026-06-29): login works, scratch has room.
 - [x] `csml` partitions confirmed via `slist`: **A30 only**.
 - [x] Repo scaffold present (envs, wrapper contract, configs, loader, downloader).
 - [x] **TissueNet token validated** (2026-06-29) and **v1.1 downloaded + md5-verified on cluster**
@@ -45,7 +45,7 @@ Never hold an interactive session. Submit detached via `sbatch`, poll with short
 
 ```bash
 scp -o BatchMode=yes -o ConnectTimeout=20 D:/cajal/<path> \
-  gilbreth.rcac.purdue.edu:/scratch/gilbreth/gupta596/MotionGen/HOI/cajal/<path>
+  gilbreth.rcac.purdue.edu:/scratch/gilbreth/$USER/cellseg-benchmark/<path>
 ```
 
 ## 4. Build the conda envs  (the ACTUAL working recipe - `module`/`conda-env-mod` are flaky non-interactively)
@@ -55,7 +55,7 @@ scp -o BatchMode=yes -o ConnectTimeout=20 D:/cajal/<path> \
 
 ```bash
 source /apps/external/anaconda/2025.06/etc/profile.d/conda.sh
-SCRATCH=/scratch/gilbreth/gupta596 ; export PIP_CACHE_DIR=$SCRATCH/.pipcache CONDA_PKGS_DIRS=$SCRATCH/.condapkgs
+SCRATCH=/scratch/gilbreth/$USER ; export PIP_CACHE_DIR=$SCRATCH/.pipcache CONDA_PKGS_DIRS=$SCRATCH/.condapkgs
 conda create -y -p $SCRATCH/envs/torch-cell python=3.10
 conda activate $SCRATCH/envs/torch-cell
 pip install torch==2.5.* torchvision --index-url https://download.pytorch.org/whl/cu121
@@ -100,5 +100,5 @@ sbatch --export=ALL,LR=1e-5,FRACTION=1.0,EPOCHS=20,MAXN=200 slurm/finetune.sbatc
 
 ## 7. The plan
 
-Full research-hardened spec: [`project-spec.md`](project-spec.md). Original handoff:
-[`handoff.md`](handoff.md). Both predate the cluster wiring; coordinates here supersede theirs.
+Full research-hardened spec: [`docs/project-spec.md`](docs/project-spec.md). Original handoff:
+[`docs/handoff.md`](docs/handoff.md). Both predate the cluster wiring; coordinates here supersede theirs.

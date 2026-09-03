@@ -9,7 +9,7 @@ CONDA=/apps/external/anaconda/2025.06
 export PATH="$CONDA/bin:$PATH"
 source "$CONDA/etc/profile.d/conda.sh"
 
-SCRATCH=/scratch/gilbreth/gupta596
+SCRATCH=/scratch/gilbreth/$USER
 ENVS="$SCRATCH/envs"
 mkdir -p "$ENVS"
 export PIP_CACHE_DIR="$SCRATCH/.pipcache"        # keep pip cache off the 25 GB home

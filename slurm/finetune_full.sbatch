@@ -8,5 +8,5 @@
 #SBATCH --time=08:00:00
 #SBATCH --output=cajal-fullft-%j.out
 # Full fine-tune study (val-based LR selection + 3-seed test eval). ~2.5-3.5 GPU-hrs.
-cd /scratch/gilbreth/gupta596/MotionGen/HOI/cajal
+cd /scratch/gilbreth/$USER/cellseg-benchmark
 bash scripts/gilbreth/finetune_full.sh

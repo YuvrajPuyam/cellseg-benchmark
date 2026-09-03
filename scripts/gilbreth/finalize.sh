@@ -3,18 +3,18 @@
 # fine-tune delta + regenerate nuclear figures. Survives ssh drops (run via nohup, poll the log):
 #   nohup bash scripts/gilbreth/finalize.sh > logs/finalize.log 2>&1 &
 set -o pipefail
-R=/scratch/gilbreth/gupta596/MotionGen/HOI/cajal; cd "$R"
+R=/scratch/gilbreth/$USER/cellseg-benchmark; cd "$R"
 source /apps/external/anaconda/2025.06/etc/profile.d/conda.sh
 
 if [ ! -f results/masks/stardist_nuclear_test.npz ]; then
   echo "[finalize] stardist nuclear CPU inference (no GPU → avoids the TF segfault)"
-  conda activate /scratch/gilbreth/gupta596/envs/stardist-tf
+  conda activate /scratch/gilbreth/$USER/envs/stardist-tf
   CUDA_VISIBLE_DEVICES="" python -m src.eval.run_benchmark infer \
       --model stardist --task nuclear --split test --limit 300 --out results/masks 2>&1 | tail -3
   conda deactivate
 fi
 
-conda activate /scratch/gilbreth/gupta596/envs/metrics
+conda activate /scratch/gilbreth/$USER/envs/metrics
 for f in results/masks/*_test*.npz; do
   echo "[finalize] scoring $(basename "$f")"
   python -m src.eval.run_benchmark score --pred-npz "$f" 2>&1 | grep -E "SCORE_DONE|Error|Traceback|x not in" | tail -2

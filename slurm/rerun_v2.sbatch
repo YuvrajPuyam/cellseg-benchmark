@@ -7,5 +7,5 @@
 #SBATCH --mem=60G
 #SBATCH --time=01:00:00
 #SBATCH --output=cajal-rerun-%j.out
-cd /scratch/gilbreth/gupta596/MotionGen/HOI/cajal
+cd /scratch/gilbreth/$USER/cellseg-benchmark
 bash scripts/gilbreth/rerun_v2.sh

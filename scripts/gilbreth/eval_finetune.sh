@@ -3,12 +3,12 @@
 # whole-cell eval infer with CAJAL_CELLPOSE_CKPT → score → print delta vs zero-shot.
 #   nohup bash scripts/gilbreth/eval_finetune.sh > logs/eval_finetune.log 2>&1 &
 set -o pipefail
-R=/scratch/gilbreth/gupta596/MotionGen/HOI/cajal; cd "$R"
+R=/scratch/gilbreth/$USER/cellseg-benchmark; cd "$R"
 source /apps/external/anaconda/2025.06/etc/profile.d/conda.sh
 
 echo "waiting for fine-tune checkpoints + zero-shot baseline..."
 for i in $(seq 1 320); do
-  ftrun=$(squeue -u gupta596 -h -n cajal-finetune -o %T 2>/dev/null | wc -l)
+  ftrun=$(squeue -u $USER -h -n cajal-finetune -o %T 2>/dev/null | wc -l)
   nck=$(ls results/checkpoints/models/ 2>/dev/null | grep -c "cpsam_ft_.*_n200")
   base=0; [ -f results/cellpose_wholecell_test_agg.json ] && base=1
   [ "$ftrun" -eq 0 ] && [ "$nck" -ge 1 ] && [ "$base" -eq 1 ] && { echo "ready after ~$((i*15))s ($nck ckpts)"; break; }
@@ -26,12 +26,12 @@ done
 JCSV=$(IFS=,; echo "${JIDS[*]}")
 echo "waiting for eval infer jobs: $JCSV"
 for i in $(seq 1 160); do
-  r=$(squeue -u gupta596 -h -j "$JCSV" -o %T 2>/dev/null | wc -l)
+  r=$(squeue -u $USER -h -j "$JCSV" -o %T 2>/dev/null | wc -l)
   [ "$r" -eq 0 ] && { echo "eval infer done after ~$((i*15))s"; break; }
   sleep 15
 done
 
-conda activate /scratch/gilbreth/gupta596/envs/metrics
+conda activate /scratch/gilbreth/$USER/envs/metrics
 for f in results/masks/cellpose_wholecell_test_*.npz; do
   python -m src.eval.run_benchmark score --pred-npz "$f" 2>&1 | grep -E "SCORE_DONE|Error|Traceback" | tail -1
 done

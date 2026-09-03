@@ -7,7 +7,7 @@ set -o pipefail
 CONDA=/apps/external/anaconda/2025.06
 export PATH="$CONDA/bin:$PATH"
 source "$CONDA/etc/profile.d/conda.sh"
-SCRATCH=/scratch/gilbreth/gupta596
+SCRATCH=/scratch/gilbreth/$USER
 ENVS="$SCRATCH/envs"
 export PIP_CACHE_DIR="$SCRATCH/.pipcache"
 export CONDA_PKGS_DIRS="$SCRATCH/.condapkgs"
